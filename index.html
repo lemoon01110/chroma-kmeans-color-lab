@@ -446,6 +446,110 @@ footer.foot{margin-top:clamp(28px,4vw,40px);padding-top:var(--pad-sm);border-top
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--ink-mute);font-size:12.5px}
 footer.foot a{color:var(--accent);text-decoration:none}
 
+/* ============================================================= *
+ *  LEARNING RAIL — missions, vocab, predict/reveal               *
+ * ============================================================= */
+.lesson{margin-bottom:var(--gap)}
+.lesson-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:var(--pad-sm) var(--pad);border-bottom:1px solid var(--line);
+}
+.lesson-head .lede{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lesson-head h2{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.01em}
+.mission-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.mission-tab{
+  font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;
+  border:1px solid var(--line);border-radius:99px;padding:6px 12px;
+  background:var(--surface-2);color:var(--ink-mute);transition:.15s;
+}
+.mission-tab:hover{color:var(--ink);border-color:var(--line-strong)}
+.mission-tab[aria-selected="true"]{
+  background:var(--accent);color:var(--accent-ink);border-color:transparent;
+}
+.mission-tab .n{
+  font-family:var(--font-mono);font-size:10px;opacity:.75;margin-right:4px;
+}
+.lesson-body{padding:var(--pad);display:grid;gap:16px}
+.mission-goal{
+  display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;
+}
+@media(max-width:560px){.mission-goal{grid-template-columns:1fr}}
+.mission-goal .goal-mark{
+  flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  background:var(--accent-soft);color:var(--accent);font-family:var(--font-mono);font-weight:700;font-size:15px;
+}
+.mission-goal h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.mission-goal p{font-size:13.5px;color:var(--ink-mute);line-height:1.45;max-width:62ch}
+.mission-meta{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;
+  padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink-mute);background:var(--surface-2);
+}
+.chip strong{color:var(--ink);font-weight:600}
+
+.predict{
+  border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+  padding:14px 16px;display:grid;gap:12px;
+}
+.predict.hidden{display:none!important}
+.predict-q{font-size:14px;font-weight:500;line-height:1.4}
+.predict-q .label{
+  display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:6px;
+}
+.predict-choices{display:flex;flex-direction:column;gap:8px}
+.predict-choice{
+  font:inherit;text-align:left;cursor:pointer;
+  border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+  background:var(--surface);color:var(--ink);transition:.15s;
+}
+.predict-choice:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+.predict-choice[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.predict-choice.correct{border-color:var(--good);background:color-mix(in srgb,var(--good) 10%,var(--surface))}
+.predict-choice.wrong{opacity:.55}
+.predict-reveal{
+  font-size:13.5px;line-height:1.5;color:var(--ink);
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  border-radius:0 10px 10px 0;padding:10px 12px;
+}
+.predict-reveal.hidden{display:none!important}
+.predict-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lesson-nav{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+
+.vocab{
+  position:sticky;top:0;z-index:25;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:var(--gap);padding:10px 14px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+}
+.vocab-terms{display:flex;flex-wrap:wrap;gap:14px 18px;font-size:12.5px;color:var(--ink-mute)}
+.vocab-terms b{color:var(--ink);font-weight:600}
+.vocab-terms .eq{opacity:.45;margin:0 4px}
+.vocab-phase{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.phase-pill{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
+  padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink-mute);background:transparent;
+  transition:.2s;
+}
+.phase-pill.active{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.phase-pill.done{border-color:color-mix(in srgb,var(--good) 45%,transparent);color:var(--good)}
+.phase-arrow{color:var(--ink-soft);font-size:12px}
+
+.phase-rail{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;
+}
+.phase-rail .phase-pill{font-size:11.5px;padding:6px 11px}
+
+.exp-row{display:flex;flex-direction:column;gap:8px;padding-bottom:4px}
+.exp-row .lbl{font-size:12px;font-weight:600;color:var(--ink-mute);font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase}
+.exp-btns{display:flex;flex-wrap:wrap;gap:8px}
+.exp-btns .btn{flex:1;min-width:120px}
+
 .reveal{animation:reveal .6s both cubic-bezier(.2,.7,.2,1)}
 @keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
@@ -460,9 +564,9 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== MASTHEAD ===================== -->
   <header class="masthead reveal">
     <div class="brand">
-      <span class="eyebrow">Unsupervised Learning · Live</span>
+      <span class="eyebrow">Unsupervised Learning · Lab</span>
       <h1>Chroma <em>Lab</em></h1>
-      <p class="tagline">Watch K-Means teach itself a color palette from any photo — reduce millions of colors down to just&nbsp;K.</p>
+      <p class="tagline">Learn K-Means by running it: pixels become points, markers hunt for colors, and a palette appears without anyone labeling a thing.</p>
     </div>
     <div class="masthead-right">
       <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
@@ -472,6 +576,65 @@ footer.foot a{color:var(--accent);text-decoration:none}
       </button>
     </div>
   </header>
+
+  <!-- ===================== LESSON / MISSION ===================== -->
+  <section class="card lesson reveal" id="lessonCard" style="animation-delay:.03s">
+    <div class="lesson-head">
+      <div class="lede">
+        <h2>Today’s lab</h2>
+        <span class="control-desc">Pick a mission — each one is built to surface a common misconception.</span>
+      </div>
+      <div class="mission-tabs" role="tablist" aria-label="Lab missions" id="missionTabs"></div>
+    </div>
+    <div class="lesson-body">
+      <div class="mission-goal">
+        <div class="goal-mark" id="missionMark">1</div>
+        <div>
+          <h3 id="missionTitle">Posterize a sunset</h3>
+          <p id="missionGoal">Load Dusk and keep only 4 colors. Watch smooth gradients collapse into flat bands — that’s K being too small for the scene.</p>
+          <div class="mission-meta" id="missionMeta"></div>
+        </div>
+      </div>
+
+      <div class="predict" id="predictPanel">
+        <div>
+          <div class="predict-q">
+            <span class="label">Predict</span>
+            <div id="predictQuestion">Before you stare at the result: what will happen to the orange glow?</div>
+          </div>
+        </div>
+        <div class="predict-choices" id="predictChoices" role="group" aria-label="Prediction choices"></div>
+        <div class="predict-reveal hidden" id="predictReveal" role="status"></div>
+        <div class="predict-actions">
+          <button class="btn small primary" id="predictCheckBtn" disabled>Check prediction</button>
+          <button class="btn small ghost hidden" id="predictReplayBtn">Replay the loop</button>
+          <div class="lesson-nav">
+            <button class="btn small" id="missionPrevBtn">Previous</button>
+            <button class="btn small primary" id="missionNextBtn">Next mission</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Persistent vocabulary / phase strip -->
+  <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="K-Means vocabulary">
+    <div class="vocab-terms">
+      <span><b>point</b><span class="eq">=</span>pixel</span>
+      <span><b>mean</b><span class="eq">=</span>palette color</span>
+      <span><b>distance</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span>
+      <span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors</span>
+    </div>
+    <div class="vocab-phase" aria-live="polite">
+      <span class="phase-pill" id="phaseGuess">Guess</span>
+      <span class="phase-arrow" aria-hidden="true">→</span>
+      <span class="phase-pill" id="phaseAssign">Assign</span>
+      <span class="phase-arrow" aria-hidden="true">→</span>
+      <span class="phase-pill" id="phaseUpdate">Update</span>
+      <span class="phase-arrow" aria-hidden="true">→</span>
+      <span class="phase-pill" id="phaseConverge">Converge</span>
+    </div>
+  </div>
 
   <div class="layout">
     <!-- ===================== MAIN COLUMN ===================== -->
@@ -489,8 +652,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="stage-body">
           <!-- empty state / dropzone -->
           <div id="dropzone" class="dropzone">
-            <h3>Drop a photo here</h3>
-            <p>or pick a file — nothing leaves your device</p>
+            <h3>Drop a photo — or start a mission above</h3>
+            <p>Nothing leaves your device. Missions load a sample with the right K for the lesson.</p>
             <div class="dz-actions">
               <button class="btn primary" id="pickBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -547,7 +710,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="pal-toolbar">
           <div class="k-label-wrap">
             <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Discovered palette</h2>
-            <span class="control-desc">Colors K-Means found on its own — not chosen by a person. Click any swatch to copy its hex code.</span>
+            <span class="control-desc">The means after convergence — a rule found without labels. Click a swatch to copy its hex.</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
@@ -598,8 +761,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
                 <div class="steps">
                   <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Drop K markers (the “means”) into the cloud of colors.</p></div>
                   <div class="step"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins its nearest marker — that splits the cloud into K groups.</p></div>
-                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Each marker slides to the average color of the pixels that joined it.</p></div>
-                  <div class="step"><span class="n">4</span><p><strong>Repeat.</strong> Do 2–3 again and again. When the markers stop moving, it has <strong>“converged.”</strong></p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Update.</strong> Each marker slides to the average color of the pixels that joined it.</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Converge.</strong> Repeat Assign → Update until the markers stop moving.</p></div>
                 </div>
                 <p>Then we <strong>repaint</strong> every pixel with its group’s marker color. K colors, one photo — that’s the palette on the right.</p>
                 <div class="callout">
@@ -642,17 +805,24 @@ footer.foot a{color:var(--accent);text-decoration:none}
         </div>
       </section>
 
-      <!-- WATCH IT LEARN -->
+      <!-- ASSIGN → UPDATE → CONVERGE -->
       <section class="card reveal" style="animation-delay:.12s">
         <div class="card-head">
-          <h2>Watch it learn</h2>
-          <span class="badge">replay</span>
+          <h2>Assign → Update</h2>
+          <span class="badge" id="convBadge">idle</span>
         </div>
         <div class="card-pad learn">
-          <p class="control-desc" style="margin-bottom:2px">Press play to replay every step. The reduced image above sharpens as the colors settle into place.</p>
+          <div class="phase-rail" aria-hidden="true">
+            <span class="phase-pill" id="learnPhaseAssign">Assign</span>
+            <span class="phase-arrow">→</span>
+            <span class="phase-pill" id="learnPhaseUpdate">Update</span>
+            <span class="phase-arrow">→</span>
+            <span class="phase-pill" id="learnPhaseConverge">Converge</span>
+          </div>
+          <p class="control-desc" style="margin-bottom:2px">Each loop: every pixel <b>joins</b> its nearest mean, then each mean <b>slides</b> to the average of its pixels. Play to watch the reduced image sharpen.</p>
           <div class="learn-status">
             <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
-            <span class="badge" id="convBadge">idle</span>
+            <span class="control-desc" id="phaseCaption" style="margin:0">idle</span>
           </div>
           <div class="itertrack"><div class="fill" id="iterFill"></div></div>
           <div class="transport">
@@ -673,15 +843,24 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- OPTIONS -->
       <section class="card reveal" style="animation-delay:.16s;overflow:hidden">
-        <details class="acc" style="border-top:0">
+        <details class="acc" style="border-top:0" open>
           <summary>
             <span style="display:flex;align-items:center;gap:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
-              Algorithm options
+              Experiments &amp; options
             </span>
             <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="m9 6 6 6-6 6"/></svg>
           </summary>
           <div class="acc-body">
+            <div class="exp-row">
+              <span class="lbl">Quick experiments</span>
+              <div class="exp-btns">
+                <button class="btn small" id="expPosterize" title="K=4 on the current image">Posterize (K=4)</button>
+                <button class="btn small" id="expRandom" title="Random init + re-seed">Random starts</button>
+                <button class="btn small" id="expLab" title="Switch color space to LAB">Use LAB distance</button>
+              </div>
+            </div>
+            <div class="divider"></div>
             <div class="opt-row">
               <div class="lblwrap">
                 <span class="lbl">Color space</span>
@@ -718,7 +897,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- DOWNLOADS -->
       <section class="card reveal" style="animation-delay:.2s">
-        <div class="card-head"><h2>Export</h2><span class="sub">offline &amp; free</span></div>
+        <div class="card-head"><h2>Export the rule</h2><span class="sub">unsupervised payoff</span></div>
         <div class="card-pad">
           <div class="dl-grid">
             <button class="btn small" id="dlPng" disabled>
@@ -1037,6 +1216,7 @@ function onWorkerDone(e){
   // wire up the animation using the returned history
   setupPlayback();
   updateReducedLabel();
+  onLessonComputeDone();
 }
 
 /* Repaint the DISPLAY-resolution image: assign each pixel to its nearest
@@ -1155,12 +1335,20 @@ function updateIterUI(showConverged){
   const h=state.history;
   $('iterNum').textContent = h? (play.frame+1) : 0;
   const badge=$('convBadge');
-  if(play.playing){badge.className='badge live';badge.innerHTML='<span class="pulse"></span> learning';}
+  const atEnd = !!(h && play.frame===h.length-1);
+  if(play.playing){badge.className='badge live';badge.innerHTML='<span class="pulse"></span> looping';}
   else if(showConverged && state.converged){badge.className='badge done';badge.textContent='✓ converged';}
   else if(h){badge.className='badge';badge.textContent='paused';}
   else{badge.className='badge';badge.textContent='idle';}
   const frac = h&&h.length>1 ? (play.frame/(h.length-1)) : 0;
   $('iterFill').style.width=(frac*100)+'%';
+  setPhaseUI({
+    playing: play.playing,
+    hasHistory: !!(h&&h.length),
+    frame: play.frame,
+    atEnd,
+    converged: !!(showConverged && state.converged)
+  });
 }
 function togglePlay(){
   const h=state.history; if(!h||!h.length)return;
@@ -1265,10 +1453,19 @@ kSlider.addEventListener('input',()=>{
   state.K=+kSlider.value;
   $('kValue').innerHTML=state.K+'<span class="unit">colors</span>';
   kSlider.setAttribute('aria-valuenow',state.K);
-  updateReducedLabel(); setKFill();
+  updateReducedLabel(); setKFill(); syncVocab();
   if(state.img) scheduleCompute(false);
 });
 setKFill();
+
+function setK(k, recompute){
+  state.K=clamp(k|0,2,32);
+  kSlider.value=state.K;
+  $('kValue').innerHTML=state.K+'<span class="unit">colors</span>';
+  kSlider.setAttribute('aria-valuenow',state.K);
+  updateReducedLabel(); setKFill(); syncVocab();
+  if(recompute && state.img) scheduleCompute(false);
+}
 
 // --- view tabs (side by side / compare) ---
 let currentView='sbs';
@@ -1323,6 +1520,7 @@ function setColorSpace(cs){
   state.colorSpace=cs;
   $('csRGB').setAttribute('aria-pressed',cs==='rgb');
   $('csLAB').setAttribute('aria-pressed',cs==='lab');
+  syncVocab();
   if(state.img){prepColorData();scheduleCompute(false);}
 }
 $('csRGB').addEventListener('click',()=>setColorSpace('rgb'));
@@ -1495,7 +1693,7 @@ function initMiniDemo(){
   const W=cv.width, H=cv.height, K=3;
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   let pts=[], centroids=[], labels=[], step=0, phase='assign', t0=0, moveFrom=[], moveTo=[], raf=0;
-  const phaseText={assign:'step: assign → color each point', move:'step: move → jump to the middle', rest:'✓ settled — starting over'};
+  const phaseText={assign:'Assign — color each point', move:'Update — jump to the middle', rest:'Converged — starting over'};
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
   // rough gaussian (sum of uniforms) so points form soft blobs
@@ -1549,6 +1747,268 @@ function initMiniDemo(){
   }
 }
 
+/* =====================================================================
+ *  LESSON SYSTEM — missions, predict/reveal, phase vocabulary
+ * ===================================================================== */
+const MISSIONS=[
+  {
+    id:'posterize',
+    n:'1',
+    tab:'Posterize',
+    title:'Posterize a sunset',
+    goal:'Load Dusk with K=4. Smooth gradients should collapse into flat bands — that’s what happens when K is too small for the scene.',
+    sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
+    chips:[['photo','Dusk'],['K','4'],['look for','banding']],
+    predict:{
+      q:'Before you stare at the result: what happens to the orange glow?',
+      choices:[
+        {id:'a', label:'It stays a smooth wash of orange → yellow.'},
+        {id:'b', label:'It breaks into a few flat bands of color (posterized).'},
+        {id:'c', label:'The algorithm invents new oranges that weren’t in the photo.'}
+      ],
+      answer:'b',
+      reveal:'With only 4 means, whole ranges of similar pixels must share one color — so gradients become steps. Try raising K afterward and watch the bands soften.'
+    }
+  },
+  {
+    id:'distance',
+    n:'2',
+    tab:'Distance',
+    title:'Distance is a choice',
+    goal:'Same Bloom photo, but measure “near” in LAB (closer to human vision) instead of raw RGB. The palette often looks less muddy.',
+    sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
+    chips:[['photo','Bloom'],['distance','LAB'],['compare','flip to RGB']],
+    predict:{
+      q:'If two colors look alike to you but sit far apart in RGB numbers, which space groups them better?',
+      choices:[
+        {id:'a', label:'RGB — the computer’s native channels always match perception.'},
+        {id:'b', label:'LAB — it was designed so equal distances feel more equal.'},
+        {id:'c', label:'Neither — K-Means ignores distance entirely.'}
+      ],
+      answer:'b',
+      reveal:'K-Means only knows the distance you give it. Switch Color space to RGB on the same photo and compare: “near” changes, so the discovered rule changes.'
+    }
+  },
+  {
+    id:'random',
+    n:'3',
+    tab:'Lucky guess',
+    title:'Unsupervised ≠ unique',
+    goal:'Grove with random initialization. Hit Re-seed a few times — different starting guesses can settle into different green palettes.',
+    sample:'grove', K:6, colorSpace:'rgb', init:'random',
+    chips:[['photo','Grove'],['init','random'],['try','Re-seed']],
+    predict:{
+      q:'If nobody labels the pixels, will two runs with different random starts always find the same palette?',
+      choices:[
+        {id:'a', label:'Yes — there’s only one correct set of K colors.'},
+        {id:'b', label:'Not always — different guesses can converge to different local solutions.'},
+        {id:'c', label:'No — K-Means never converges.'}
+      ],
+      answer:'b',
+      reveal:'That’s the unsupervised punchline: the algorithm discovers a rule, not the rule. k-means++ spreads the first guesses to make results steadier — try flipping init after you re-seed a few times.'
+    }
+  },
+  {
+    id:'free',
+    n:'∞',
+    tab:'Free lab',
+    title:'Free exploration',
+    goal:'Your turn. Drop any photo, drag K, flip RGB/LAB, and export the palette you discovered. Use Assign → Update to watch the loop.',
+    sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
+    chips:[['mode','sandbox'],['export','CSS / PNG']],
+    predict:null
+  }
+];
+
+let lesson={missionId:'posterize', choice:null, checked:false, tick:0};
+
+function syncVocab(){
+  const d=$('vocabDistance'), k=$('vocabK');
+  if(d) d.textContent = state.colorSpace==='lab' ? 'LAB' : 'RGB';
+  if(k) k.textContent = String(state.K);
+}
+
+function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
+  const set=(id, mode)=>{ // mode: '', 'active', 'done'
+    const el=$(id); if(!el)return;
+    el.classList.remove('active','done');
+    if(mode) el.classList.add(mode);
+  };
+  // reset
+  ['phaseGuess','phaseAssign','phaseUpdate','phaseConverge',
+   'learnPhaseAssign','learnPhaseUpdate','learnPhaseConverge'].forEach(id=>set(id,''));
+
+  let caption='idle — load a photo or pick a mission';
+  if(!hasHistory){
+    set('phaseGuess','active');
+  }else if(converged && atEnd && !playing){
+    set('phaseGuess','done'); set('phaseAssign','done'); set('phaseUpdate','done'); set('phaseConverge','active');
+    set('learnPhaseAssign','done'); set('learnPhaseUpdate','done'); set('learnPhaseConverge','active');
+    caption='converged — markers stopped moving';
+  }else if(playing){
+    // even frames emphasize Assign; odd emphasize Update (each history snap is post-assign)
+    const assignBeat = (frame % 2) === 0;
+    set('phaseGuess','done');
+    set('phaseAssign', assignBeat?'active':'done');
+    set('phaseUpdate', assignBeat?'done':'active');
+    set('learnPhaseAssign', assignBeat?'active':'');
+    set('learnPhaseUpdate', assignBeat?'':'active');
+    caption = assignBeat ? 'Assign — pixels join nearest mean' : 'Update — means slide to averages';
+  }else if(frame===0){
+    set('phaseGuess','active'); set('phaseAssign','active');
+    set('learnPhaseAssign','active');
+    caption='iteration 1 — first assignment after the guess';
+  }else{
+    set('phaseGuess','done'); set('phaseAssign','active'); set('phaseUpdate','done');
+    set('learnPhaseAssign','active'); set('learnPhaseUpdate','done');
+    caption='paused mid-loop — Step or Play to continue';
+  }
+  const cap=$('phaseCaption'); if(cap) cap.textContent=caption;
+}
+
+function currentMission(){return MISSIONS.find(m=>m.id===lesson.missionId)||MISSIONS[0];}
+
+function buildMissionTabs(){
+  const host=$('missionTabs'); if(!host)return;
+  host.innerHTML='';
+  MISSIONS.forEach(m=>{
+    const b=document.createElement('button');
+    b.className='mission-tab';
+    b.type='button';
+    b.setAttribute('role','tab');
+    b.setAttribute('aria-selected', m.id===lesson.missionId);
+    b.innerHTML=`<span class="n">${m.n}</span>${m.tab}`;
+    b.addEventListener('click',()=>startMission(m.id));
+    host.appendChild(b);
+  });
+}
+
+function renderMissionChrome(){
+  const m=currentMission();
+  $('missionMark').textContent=m.n;
+  $('missionTitle').textContent=m.title;
+  $('missionGoal').textContent=m.goal;
+  const meta=$('missionMeta'); meta.innerHTML='';
+  (m.chips||[]).forEach(([k,v])=>{
+    const s=document.createElement('span'); s.className='chip';
+    s.innerHTML=`${k} <strong>${v}</strong>`;
+    meta.appendChild(s);
+  });
+  document.querySelectorAll('.mission-tab').forEach((el,i)=>{
+    el.setAttribute('aria-selected', MISSIONS[i].id===lesson.missionId);
+  });
+  const idx=MISSIONS.findIndex(x=>x.id===lesson.missionId);
+  $('missionPrevBtn').disabled = idx<=0;
+  $('missionNextBtn').textContent = idx>=MISSIONS.length-1 ? 'Back to start' : 'Next mission';
+  renderPredict(m);
+}
+
+function renderPredict(m){
+  const panel=$('predictPanel');
+  if(!m.predict){
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.classList.remove('hidden');
+  $('predictQuestion').textContent=m.predict.q;
+  const host=$('predictChoices'); host.innerHTML='';
+  m.predict.choices.forEach(c=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='predict-choice';
+    b.setAttribute('aria-pressed', lesson.choice===c.id);
+    b.textContent=c.label;
+    b.dataset.id=c.id;
+    b.addEventListener('click',()=>{
+      if(lesson.checked) return;
+      lesson.choice=c.id;
+      host.querySelectorAll('.predict-choice').forEach(el=>el.setAttribute('aria-pressed', el.dataset.id===c.id));
+      $('predictCheckBtn').disabled=false;
+    });
+    host.appendChild(b);
+  });
+  const rev=$('predictReveal');
+  rev.classList.add('hidden'); rev.textContent='';
+  $('predictCheckBtn').disabled=!lesson.choice;
+  $('predictCheckBtn').classList.toggle('hidden', lesson.checked);
+  $('predictReplayBtn').classList.toggle('hidden', !lesson.checked);
+  if(lesson.checked) applyPredictResult(m, false);
+}
+
+function applyPredictResult(m, announce){
+  const ans=m.predict.answer;
+  $('predictChoices').querySelectorAll('.predict-choice').forEach(el=>{
+    el.classList.remove('correct','wrong');
+    if(el.dataset.id===ans) el.classList.add('correct');
+    else if(el.dataset.id===lesson.choice) el.classList.add('wrong');
+  });
+  const rev=$('predictReveal');
+  rev.classList.remove('hidden');
+  rev.innerHTML = (lesson.choice===ans
+    ? '<strong>Nice.</strong> '
+    : '<strong>Not quite — here’s the idea.</strong> ') + m.predict.reveal;
+  $('predictCheckBtn').classList.add('hidden');
+  $('predictReplayBtn').classList.remove('hidden');
+  if(announce && state.history && state.history.length){
+    // nudge them to watch the loop after checking
+  }
+}
+
+function checkPrediction(){
+  const m=currentMission(); if(!m.predict || !lesson.choice) return;
+  lesson.checked=true;
+  applyPredictResult(m, true);
+}
+
+function startMission(id, opts){
+  const m=MISSIONS.find(x=>x.id===id)||MISSIONS[0];
+  lesson.missionId=m.id;
+  lesson.choice=null;
+  lesson.checked=false;
+  lesson.tick=0;
+  renderMissionChrome();
+
+  // apply curricular defaults without double-computing
+  setK(m.K, false);
+  state.colorSpace=m.colorSpace;
+  $('csRGB').setAttribute('aria-pressed', m.colorSpace==='rgb');
+  $('csLAB').setAttribute('aria-pressed', m.colorSpace==='lab');
+  state.init=m.init;
+  $('initPP').setAttribute('aria-pressed', m.init==='kmeanspp');
+  $('initRandom').setAttribute('aria-pressed', m.init==='random');
+  syncVocab();
+
+  if(m.sample){
+    loadImageFromSource(getSample(m.sample).url, m.sample);
+  }else if(!(opts&&opts.keepImage)){
+    // free lab: leave current image if any; otherwise show dropzone
+    if(!state.img){
+      $('dropzone').classList.remove('hidden');
+      $('afterLoadRow').classList.add('hidden');
+      $('viewSbs').classList.add('hidden');
+      $('viewCompare').classList.add('hidden');
+      setPhaseUI({playing:false,hasHistory:false,frame:0,atEnd:false,converged:false});
+    }else{
+      prepColorData();
+      scheduleCompute(true);
+    }
+  }
+}
+
+function onLessonComputeDone(){
+  // enable "replay the loop" once we have history during a predict mission
+  if(currentMission().predict && lesson.checked){
+    $('predictReplayBtn').classList.remove('hidden');
+  }
+}
+
+function nextMission(dir){
+  const idx=MISSIONS.findIndex(m=>m.id===lesson.missionId);
+  let n=idx+(dir||1);
+  if(n>=MISSIONS.length) n=0;
+  if(n<0) n=MISSIONS.length-1;
+  startMission(MISSIONS[n].id);
+}
+
 /* ---------- boot ---------- */
 // Sync state to the slider's ACTUAL value — browsers restore form control
 // positions across reloads, so trust the control rather than a hardcoded default.
@@ -1559,6 +2019,20 @@ setKFill();
 buildSamples($('samplesEmpty'));
 updateReducedLabel();
 initMiniDemo();
+
+// lesson UI
+buildMissionTabs();
+$('predictCheckBtn').addEventListener('click', checkPrediction);
+$('predictReplayBtn').addEventListener('click',()=>{if(state.history){restartAnim();togglePlay();}});
+$('missionNextBtn').addEventListener('click',()=>nextMission(1));
+$('missionPrevBtn').addEventListener('click',()=>nextMission(-1));
+$('expPosterize').addEventListener('click',()=>{setK(4,true);});
+$('expRandom').addEventListener('click',()=>{setInit('random');state.seed=(Math.random()*1e9)|0;if(state.img)scheduleCompute(true);});
+$('expLab').addEventListener('click',()=>setColorSpace('lab'));
+syncVocab();
+setPhaseUI({playing:false,hasHistory:false,frame:0,atEnd:false,converged:false});
+// auto-start the first curriculum mission so the lab isn't an empty dropzone
+startMission('posterize');
 </script>
 </body>
 </html>
