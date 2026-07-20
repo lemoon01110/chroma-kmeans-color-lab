@@ -46,6 +46,11 @@
   --radius:    16px;
   --radius-sm: 10px;
   --grain-opacity:.4;
+  /* Shared spacing — keep card chrome consistent */
+  --pad:       clamp(16px, 2.2vw, 22px);
+  --pad-sm:    14px;
+  --gap:       24px;
+  --gap-sm:    16px;
 }
 [data-theme="dark"]{
   --bg:        #121311;
@@ -98,12 +103,15 @@ body::after{
 /* ============================================================= *
  *  LAYOUT                                                        *
  * ============================================================= */
-.wrap{max-width:1320px;margin:0 auto;padding:clamp(16px,3vw,40px)}
+.wrap{
+  max-width:1320px;margin:0 auto;
+  padding:clamp(20px,3.5vw,48px) clamp(16px,3vw,40px);
+}
 
 header.masthead{
   display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
   flex-wrap:wrap;
-  padding-bottom:22px;margin-bottom:26px;
+  padding-bottom:clamp(18px,2.5vw,24px);margin-bottom:clamp(20px,2.8vw,28px);
   border-bottom:1px solid var(--line);
 }
 .brand{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -143,7 +151,7 @@ header.masthead{
 .layout{
   display:grid;
   grid-template-columns: minmax(0,1fr) 372px;
-  gap:24px;align-items:start;
+  gap:var(--gap);align-items:start;
 }
 @media(max-width:960px){ .layout{grid-template-columns:1fr} }
 
@@ -152,15 +160,16 @@ header.masthead{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
   box-shadow:var(--shadow);
 }
-.card-pad{padding:clamp(14px,2vw,20px)}
+.card-pad{padding:var(--pad)}
 .card-head{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:14px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;
+  padding:var(--pad-sm) var(--pad);border-bottom:1px solid var(--line);
 }
 .card-head h2{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.01em}
 .card-head .sub{font-size:12px;color:var(--ink-mute)}
 
-.sidebar{display:flex;flex-direction:column;gap:20px;position:sticky;top:18px}
+.sidebar{display:flex;flex-direction:column;gap:var(--gap-sm);position:sticky;top:18px}
 @media(max-width:960px){ .sidebar{position:static} }
 
 /* ============================================================= *
@@ -174,7 +183,7 @@ header.masthead{
 .stage-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .stage-tabs button:hover{color:var(--ink)}
 
-.stage-body{padding:clamp(12px,1.8vw,20px)}
+.stage-body{padding:var(--pad)}
 .viewport{
   position:relative;width:100%;border-radius:12px;overflow:hidden;
   background:
@@ -231,15 +240,15 @@ header.masthead{
 /* dropzone / empty */
 .dropzone{
   border:2px dashed var(--line-strong);border-radius:14px;
-  padding:38px 20px;text-align:center;transition:.2s;background:var(--surface-2);
+  padding:clamp(28px,4vw,40px) clamp(16px,3vw,24px);text-align:center;transition:.2s;background:var(--surface-2);
 }
 .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);transform:scale(.995)}
-.dropzone h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:4px}
-.dropzone p{color:var(--ink-mute);font-size:14px;margin-bottom:16px}
+.dropzone h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:6px}
+.dropzone p{color:var(--ink-mute);font-size:14px;margin-bottom:18px}
 .dz-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* samples */
-.samples{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.samples{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;justify-content:center}
 .sample{
   border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--surface);cursor:pointer;
   display:flex;flex-direction:column;gap:6px;width:96px;transition:.18s;
@@ -269,10 +278,10 @@ header.masthead{
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 
-/* K slider */
-.k-block{padding:2px}
-.k-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
-.k-label-wrap{display:flex;flex-direction:column;gap:4px;min-width:0}
+/* K slider — do NOT set padding here; .card-pad owns inset (old .k-block{padding:2px} overrode it) */
+.k-block{min-width:0}
+.k-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.k-label-wrap{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
 .k-label{font-size:15px;font-weight:600}
 .control-desc{font-size:12.5px;color:var(--ink-mute);line-height:1.4}
 .k-desc{max-width:24ch}
@@ -281,14 +290,17 @@ header.masthead{
   font-family:var(--font-mono);font-weight:700;line-height:1;
   font-size:clamp(40px,5.6vw,56px);letter-spacing:-.03em;color:var(--accent);
   font-variant-numeric:tabular-nums;flex:none;display:inline-flex;align-items:baseline;gap:5px;
+  padding-left:4px;
 }
 .k-value .unit{font-size:12.5px;color:var(--ink-mute);font-weight:500;letter-spacing:0}
-.k-scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);margin-top:8px}
+.k-scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);margin-top:10px;padding:0 2px}
 
 input[type=range].slider{
   -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
   background:linear-gradient(90deg,var(--accent) var(--fill,50%), var(--line-strong) var(--fill,50%));
   outline-offset:6px;cursor:pointer;
+  /* room so the thumb isn't clipped against card edges */
+  margin:4px 0;
 }
 input[type=range].slider::-webkit-slider-thumb{
   -webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--surface);
@@ -324,12 +336,12 @@ input[type=range].slider::-moz-range-thumb{
 .itertrack .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--accent));width:0;transition:width .25s ease}
 
 /* palette */
-.pal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.pal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:var(--pad-sm) var(--pad);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px}
 .seg button{font:inherit;font-size:12px;font-weight:500;border:0;background:transparent;color:var(--ink-mute);padding:5px 11px;border-radius:6px;cursor:pointer;transition:.15s}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 
-.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;padding:16px}
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;padding:var(--pad)}
 .swatch{
   border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;
   transition:transform .15s,box-shadow .15s,border-color .15s;text-align:left;font:inherit;color:var(--ink);
@@ -353,13 +365,13 @@ input[type=range].slider::-moz-range-thumb{
 /* options accordion */
 details.acc{border-top:1px solid var(--line)}
 details.acc>summary{
-  list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  list-style:none;cursor:pointer;padding:var(--pad-sm) var(--pad);display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-weight:500;font-size:14px;user-select:none;
 }
 details.acc>summary::-webkit-details-marker{display:none}
 details.acc>summary .chev{transition:transform .2s;color:var(--ink-mute)}
 details.acc[open]>summary .chev{transform:rotate(90deg)}
-.acc-body{padding:4px 18px 18px}
+.acc-body{padding:4px var(--pad) var(--pad)}
 .opt-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px dashed var(--line)}
 .opt-row:last-child{border-bottom:0}
 .opt-row .lblwrap{display:flex;flex-direction:column;gap:4px;max-width:58%}
@@ -430,7 +442,7 @@ details.acc[open]>summary .chev{transform:rotate(90deg)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 .computing-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-mute);font-family:var(--font-mono)}
 
-footer.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+footer.foot{margin-top:clamp(28px,4vw,40px);padding-top:var(--pad-sm);border-top:1px solid var(--line);
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--ink-mute);font-size:12.5px}
 footer.foot a{color:var(--accent);text-decoration:none}
 
@@ -531,7 +543,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       </section>
 
       <!-- PALETTE -->
-      <section class="card reveal" id="paletteCard" style="animation-delay:.1s;margin-top:24px">
+      <section class="card reveal" id="paletteCard" style="animation-delay:.1s;margin-top:var(--gap)">
         <div class="pal-toolbar">
           <div class="k-label-wrap">
             <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Discovered palette</h2>
@@ -551,7 +563,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       </section>
 
       <!-- HOW IT WORKS -->
-      <section class="card reveal explainer" style="animation-delay:.15s;margin-top:24px">
+      <section class="card reveal explainer" style="animation-delay:.15s;margin-top:var(--gap)">
         <details open>
           <summary class="card-head" style="cursor:pointer;list-style:none">
             <h2>How this works <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— for students</span></h2>
