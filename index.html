@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Chroma — K-Means Color Lab</title>
+<!--
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  CHROMA · a K-Means color-quantization teaching tool                  │
+  │                                                                       │
+  │  Everything runs in your browser. No pixels are ever uploaded.        │
+  │  The heavy math (K-Means) runs in a Web Worker so the UI stays smooth.│
+  │                                                                       │
+  │  Read the source! The K-Means loop is in the WORKER_SOURCE string     │
+  │  near the bottom and is commented step-by-step for students.          │
+  └─────────────────────────────────────────────────────────────────────┘
+-->
+<style>
+/* ============================================================= *
+ *  DESIGN TOKENS                                                 *
+ * ============================================================= */
+:root{
+  --font-display: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, "Cascadia Mono", "Roboto Mono", monospace;
+
+  /* Light — warm paper lab */
+  --bg:        #f3efe6;
+  --bg-2:      #ece7db;
+  --surface:   #fbf9f4;
+  --surface-2: #f4f0e7;
+  --ink:       #201d18;
+  --ink-soft:  #56504590;
+  --ink-mute:  #6b6455;
+  --line:      #ddd6c6;
+  --line-strong:#c8bfa9;
+  --accent:    #d34122;   /* vermilion */
+  --accent-ink:#ffffff;
+  --accent-soft:#d341221a;
+  --cyan:      #1f7a75;
+  --gold:      #b8860b;
+  --good:      #1f7a3f;
+  --shadow:    0 1px 2px rgba(40,32,20,.05), 0 8px 24px -12px rgba(40,32,20,.22);
+  --shadow-lg: 0 2px 4px rgba(40,32,20,.06), 0 26px 60px -24px rgba(40,32,20,.35);
+  --radius:    16px;
+  --radius-sm: 10px;
+  --grain-opacity:.4;
+}
+[data-theme="dark"]{
+  --bg:        #121311;
+  --bg-2:      #0c0d0b;
+  --surface:   #1a1c19;
+  --surface-2: #202320;
+  --ink:       #ece7dc;
+  --ink-soft:  #ece7dc80;
+  --ink-mute:  #9c968a;
+  --line:      #2c2f2b;
+  --line-strong:#3b3f3a;
+  --accent:    #f2603f;   /* brighter vermilion for dark bg */
+  --accent-ink:#1a0d08;
+  --accent-soft:#f2603f22;
+  --cyan:      #4fd0c7;
+  --gold:      #e2b23c;
+  --good:      #5cc47f;
+  --shadow:    0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  --shadow-lg: 0 2px 4px rgba(0,0,0,.5), 0 30px 70px -28px rgba(0,0,0,.85);
+  --grain-opacity:.28;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+  transition:background .4s ease, color .4s ease;
+}
+/* atmospheric background: soft radial glows + grain */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(60% 50% at 12% 0%, var(--accent-soft), transparent 70%),
+    radial-gradient(50% 40% at 100% 8%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 70%);
+  transition:opacity .4s ease;
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  opacity:var(--grain-opacity);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+/* ============================================================= *
+ *  LAYOUT                                                        *
+ * ============================================================= */
+.wrap{max-width:1320px;margin:0 auto;padding:clamp(16px,3vw,40px)}
+
+header.masthead{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+  flex-wrap:wrap;
+  padding-bottom:22px;margin-bottom:26px;
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--accent);font-weight:600;
+}
+.brand h1{
+  font-family:var(--font-display);font-weight:600;line-height:.98;
+  font-size:clamp(34px,5.4vw,62px);letter-spacing:-.02em;
+}
+.brand h1 em{font-style:italic;color:var(--accent)}
+.tagline{color:var(--ink-mute);font-size:clamp(13px,1.5vw,15px);max-width:46ch;margin-top:6px}
+.masthead-right{display:flex;align-items:center;gap:10px}
+
+.privacy-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--ink-mute);
+  border:1px solid var(--line);border-radius:99px;padding:6px 12px;background:var(--surface);
+  white-space:nowrap;
+}
+.privacy-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 20%,transparent)}
+
+.icon-btn{
+  display:inline-grid;place-items:center;width:42px;height:42px;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  color:var(--ink);cursor:pointer;transition:transform .15s ease,background .2s,border-color .2s;
+}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--line-strong);transform:translateY(-1px)}
+.icon-btn:active{transform:translateY(0)}
+.icon-btn svg{width:20px;height:20px}
+[data-theme="light"] .moon{display:block}
+[data-theme="light"] .sun{display:none}
+[data-theme="dark"]  .moon{display:none}
+[data-theme="dark"]  .sun{display:block}
+
+.layout{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 372px;
+  gap:24px;align-items:start;
+}
+@media(max-width:960px){ .layout{grid-template-columns:1fr} }
+
+/* Cards */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.card-pad{padding:clamp(14px,2vw,20px)}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;border-bottom:1px solid var(--line);
+}
+.card-head h2{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-.01em}
+.card-head .sub{font-size:12px;color:var(--ink-mute)}
+
+.sidebar{display:flex;flex-direction:column;gap:20px;position:sticky;top:18px}
+@media(max-width:960px){ .sidebar{position:static} }
+
+/* ============================================================= *
+ *  IMAGE STAGE                                                   *
+ * ============================================================= */
+.stage-tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;padding:4px}
+.stage-tabs button{
+  font:inherit;font-size:13px;font-weight:500;color:var(--ink-mute);
+  border:0;background:transparent;padding:7px 15px;border-radius:99px;cursor:pointer;transition:.18s;
+}
+.stage-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.stage-tabs button:hover{color:var(--ink)}
+
+.stage-body{padding:clamp(12px,1.8vw,20px)}
+.viewport{
+  position:relative;width:100%;border-radius:12px;overflow:hidden;
+  background:
+    conic-gradient(from 45deg, #00000010 25%, transparent 0 50%, #00000010 0 75%, transparent 0) 0 0/22px 22px,
+    var(--surface-2);
+  min-height:240px;display:grid;place-items:center;
+}
+[data-theme="dark"] .viewport{
+  background:
+    conic-gradient(from 45deg, #ffffff0d 25%, transparent 0 50%, #ffffff0d 0 75%, transparent 0) 0 0/22px 22px,
+    var(--surface-2);
+}
+.viewport canvas{max-width:100%;height:auto;display:block;image-rendering:auto}
+
+/* side-by-side */
+.sbs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){ .sbs{grid-template-columns:1fr} }
+.pane{display:flex;flex-direction:column;gap:8px}
+.pane .plabel{
+  display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);
+}
+.pane .plabel .tag{width:8px;height:8px;border-radius:2px}
+.pane .plabel .tag.orig{background:var(--ink-mute)}
+.pane .plabel .tag.red{background:var(--accent)}
+
+/* compare slider */
+.compare{position:relative;width:100%;overflow:hidden;border-radius:12px;touch-action:none;cursor:ew-resize}
+.compare canvas{display:block;width:100%;height:auto}
+.compare .after-clip{position:absolute;inset:0;overflow:hidden;width:50%;will-change:width}
+.compare .after-clip canvas{position:absolute;top:0;left:0;width:auto;height:100%}
+.compare-divider{
+  position:absolute;top:0;bottom:0;width:2px;background:var(--surface);
+  box-shadow:0 0 0 1px rgba(0,0,0,.25);transform:translateX(-1px);pointer-events:none;
+}
+.compare-handle{
+  position:absolute;top:50%;left:0;transform:translate(-50%,-50%);
+  width:42px;height:42px;border-radius:50%;background:var(--surface);color:var(--ink);
+  display:grid;place-items:center;box-shadow:var(--shadow-lg);border:1px solid var(--line-strong);
+  pointer-events:none;
+}
+.compare-handle svg{width:20px;height:20px}
+.compare-range{
+  position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize;
+}
+.compare-range:focus-visible + .compare-handle{outline:3px solid var(--accent);outline-offset:3px}
+.compare-badge{
+  position:absolute;top:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 9px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;pointer-events:none;backdrop-filter:blur(4px);
+}
+.compare-badge.l{left:10px}
+.compare-badge.r{right:10px}
+
+/* dropzone / empty */
+.dropzone{
+  border:2px dashed var(--line-strong);border-radius:14px;
+  padding:38px 20px;text-align:center;transition:.2s;background:var(--surface-2);
+}
+.dropzone.drag{border-color:var(--accent);background:var(--accent-soft);transform:scale(.995)}
+.dropzone h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:4px}
+.dropzone p{color:var(--ink-mute);font-size:14px;margin-bottom:16px}
+.dz-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* samples */
+.samples{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.sample{
+  border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--surface);cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;width:96px;transition:.18s;
+}
+.sample:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:var(--shadow)}
+.sample.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.sample canvas{width:100%;height:56px;border-radius:7px;object-fit:cover;display:block}
+.sample span{font-size:11px;color:var(--ink-mute);text-align:center;font-family:var(--font-mono);letter-spacing:.04em}
+
+/* ============================================================= *
+ *  BUTTONS & CONTROLS                                            *
+ * ============================================================= */
+.btn{
+  font:inherit;font-size:14px;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;border-radius:11px;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);transition:.16s;
+}
+.btn:hover{background:var(--surface-2);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn svg{width:17px;height:17px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{border-color:transparent;background:transparent;padding:8px 10px}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.small{padding:7px 11px;font-size:12.5px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* K slider */
+.k-block{padding:2px}
+.k-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.k-label-wrap{display:flex;flex-direction:column;gap:4px;min-width:0}
+.k-label{font-size:15px;font-weight:600}
+.control-desc{font-size:12.5px;color:var(--ink-mute);line-height:1.4}
+.k-desc{max-width:24ch}
+/* align-items:center on the row (NOT baseline) keeps the big number inside padding */
+.k-value{
+  font-family:var(--font-mono);font-weight:700;line-height:1;
+  font-size:clamp(40px,5.6vw,56px);letter-spacing:-.03em;color:var(--accent);
+  font-variant-numeric:tabular-nums;flex:none;display:inline-flex;align-items:baseline;gap:5px;
+}
+.k-value .unit{font-size:12.5px;color:var(--ink-mute);font-weight:500;letter-spacing:0}
+.k-scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);margin-top:8px}
+
+input[type=range].slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent) var(--fill,50%), var(--line-strong) var(--fill,50%));
+  outline-offset:6px;cursor:pointer;
+}
+input[type=range].slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--surface);
+  border:2px solid var(--accent);box-shadow:var(--shadow);cursor:grab;transition:transform .1s;
+}
+input[type=range].slider::-webkit-slider-thumb:active{transform:scale(1.12);cursor:grabbing}
+input[type=range].slider::-moz-range-thumb{
+  width:24px;height:24px;border-radius:50%;background:var(--surface);
+  border:2px solid var(--accent);box-shadow:var(--shadow);cursor:grab;
+}
+
+.divider{height:1px;background:var(--line);margin:16px 0}
+
+/* watch-it-learn */
+.learn{display:flex;flex-direction:column;gap:12px}
+.learn-status{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.iter-readout{font-family:var(--font-mono);font-size:13px;color:var(--ink-mute)}
+.iter-readout b{color:var(--ink);font-size:15px}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  padding:4px 10px;border-radius:99px;font-family:var(--font-mono);letter-spacing:.04em;
+  border:1px solid var(--line);color:var(--ink-mute);
+}
+.badge.live{border-color:color-mix(in srgb,var(--gold) 40%,transparent);color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.badge.done{border-color:color-mix(in srgb,var(--good) 40%,transparent);color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
+.badge .pulse{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.transport{display:flex;gap:8px}
+.transport .btn{flex:1}
+
+/* progress track for iterations */
+.itertrack{height:5px;border-radius:99px;background:var(--line);overflow:hidden}
+.itertrack .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--accent));width:0;transition:width .25s ease}
+
+/* palette */
+.pal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{font:inherit;font-size:12px;font-weight:500;border:0;background:transparent;color:var(--ink-mute);padding:5px 11px;border-radius:6px;cursor:pointer;transition:.15s}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;padding:16px}
+.swatch{
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;
+  transition:transform .15s,box-shadow .15s,border-color .15s;text-align:left;font:inherit;color:var(--ink);
+  position:relative;animation:swin .4s both;
+}
+@keyframes swin{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+.swatch:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--line-strong)}
+.swatch .chip{height:64px;position:relative}
+.swatch .cov{
+  position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.75);mix-blend-mode:overlay;
+}
+.swatch .meta{padding:8px 10px}
+.swatch .hex{font-family:var(--font-mono);font-size:12.5px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
+.swatch .pct{font-size:11px;color:var(--ink-mute);margin-top:2px;font-family:var(--font-mono)}
+.swatch .copied{
+  position:absolute;inset:0;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s;letter-spacing:.04em;
+}
+.swatch.just-copied .copied{opacity:1}
+
+/* options accordion */
+details.acc{border-top:1px solid var(--line)}
+details.acc>summary{
+  list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-weight:500;font-size:14px;user-select:none;
+}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary .chev{transition:transform .2s;color:var(--ink-mute)}
+details.acc[open]>summary .chev{transform:rotate(90deg)}
+.acc-body{padding:4px 18px 18px}
+.opt-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px dashed var(--line)}
+.opt-row:last-child{border-bottom:0}
+.opt-row .lblwrap{display:flex;flex-direction:column;gap:4px;max-width:58%}
+.opt-row .lbl{font-size:13.5px;font-weight:500}
+.opt-row .control-desc b{color:var(--ink);font-weight:600}
+.opt-row .desc{font-size:11.5px;color:var(--ink-mute)}
+.opt-row .segsm,.opt-row .btn{flex:none;margin-top:2px}
+
+.segsm{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:2px}
+.segsm button{font:inherit;font-size:12px;border:0;background:transparent;color:var(--ink-mute);padding:5px 10px;border-radius:6px;cursor:pointer}
+.segsm button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* downloads */
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* explainer */
+.explainer .cols{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+@media(max-width:760px){.explainer .cols{grid-template-columns:1fr}}
+.rgb-explain{display:flex;align-items:center;gap:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px;flex-wrap:wrap}
+.rgb-explain svg{flex:none}
+.rgb-explain .txt{font-size:13.5px;color:var(--ink);min-width:200px;flex:1;line-height:1.5}
+.rgb-explain .txt b{color:var(--accent)}
+/* mini live 2-D k-means demo */
+.mini{border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:14px;display:flex;flex-direction:column;gap:10px;position:sticky;top:18px}
+.mini canvas{width:100%;height:auto;border-radius:10px;background:var(--surface);display:block;border:1px solid var(--line)}
+.mini-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mini-title{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
+.mini-phase{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.02em;white-space:nowrap}
+.mini-cap{font-size:12.5px;color:var(--ink-mute);line-height:1.45}
+.mini-legend{display:flex;gap:14px;font-size:11.5px;color:var(--ink-mute);flex-wrap:wrap}
+.mini-legend span{display:inline-flex;align-items:center;gap:6px}
+.mini-legend .d{width:10px;height:10px;border-radius:50%;background:var(--ink-mute)}
+.mini-legend .r{width:13px;height:13px;border-radius:50%;border:3px solid var(--ink-mute);box-sizing:border-box}
+.explainer p{font-size:14px;color:var(--ink);margin-bottom:12px}
+.explainer p:last-child{margin-bottom:0}
+.explainer strong{color:var(--accent)}
+.explainer .steps{display:grid;gap:10px;margin:4px 0 14px}
+.explainer .step{display:flex;gap:12px;align-items:flex-start}
+.explainer .step .n{
+  flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  font-family:var(--font-mono);font-weight:600;font-size:13px;display:grid;place-items:center;margin-top:1px;
+}
+.explainer .step p{margin:0;font-size:13.5px}
+.callout{
+  border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;
+  padding:12px 14px;font-size:13.5px;
+}
+
+/* tooltip */
+.tip{position:relative;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;
+  border:1px solid var(--line-strong);color:var(--ink-mute);font-size:10px;font-weight:700;cursor:help;font-family:var(--font-mono)}
+.tip:hover,.tip:focus-visible{background:var(--ink);color:var(--surface)}
+.tip[data-tip]:hover::after,.tip[data-tip]:focus-visible::after{
+  content:attr(data-tip);position:absolute;bottom:135%;left:50%;transform:translateX(-50%);
+  width:max-content;max-width:230px;background:var(--ink);color:var(--surface);font-family:var(--font-sans);
+  font-weight:400;font-size:12px;line-height:1.4;padding:8px 10px;border-radius:8px;box-shadow:var(--shadow-lg);
+  z-index:30;white-space:normal;text-align:left;letter-spacing:0;
+}
+.tip[data-tip]:hover::before,.tip[data-tip]:focus-visible::before{
+  content:"";position:absolute;bottom:135%;left:50%;transform:translate(-50%,60%) rotate(45deg);
+  width:8px;height:8px;background:var(--ink);z-index:30;
+}
+
+/* misc */
+.hidden{display:none!important}
+.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.computing-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-mute);font-family:var(--font-mono)}
+
+footer.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--ink-mute);font-size:12.5px}
+footer.foot a{color:var(--accent);text-decoration:none}
+
+.reveal{animation:reveal .6s both cubic-bezier(.2,.7,.2,1)}
+@keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead reveal">
+    <div class="brand">
+      <span class="eyebrow">Unsupervised Learning · Live</span>
+      <h1>Chroma <em>Lab</em></h1>
+      <p class="tagline">Watch K-Means teach itself a color palette from any photo — reduce millions of colors down to just&nbsp;K.</p>
+    </div>
+    <div class="masthead-right">
+      <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle light and dark mode" title="Toggle theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 6.5 6.5 0 1 0 20 14.5Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ===================== MAIN COLUMN ===================== -->
+    <main>
+      <!-- STAGE -->
+      <section class="card reveal" style="animation-delay:.05s" id="stageCard">
+        <div class="card-head">
+          <h2>The Photo</h2>
+          <div class="stage-tabs" role="tablist" aria-label="View mode">
+            <button role="tab" id="tabSbs"    aria-selected="true"  aria-controls="viewSbs">Side&nbsp;by&nbsp;side</button>
+            <button role="tab" id="tabCompare" aria-selected="false" aria-controls="viewCompare">Compare&nbsp;slider</button>
+          </div>
+        </div>
+
+        <div class="stage-body">
+          <!-- empty state / dropzone -->
+          <div id="dropzone" class="dropzone">
+            <h3>Drop a photo here</h3>
+            <p>or pick a file — nothing leaves your device</p>
+            <div class="dz-actions">
+              <button class="btn primary" id="pickBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                Choose image
+              </button>
+            </div>
+            <div class="samples" id="samplesEmpty" aria-label="Sample images"></div>
+            <input type="file" id="fileInput" accept="image/*" class="sr-only">
+          </div>
+
+          <!-- side by side -->
+          <div id="viewSbs" class="sbs hidden" role="tabpanel" aria-labelledby="tabSbs">
+            <div class="pane">
+              <div class="plabel"><span class="tag orig"></span> Original <span id="origDims" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
+              <div class="viewport"><canvas id="canvasOrig"></canvas></div>
+            </div>
+            <div class="pane">
+              <div class="plabel"><span class="tag red"></span> Reduced to <span id="redK" style="color:var(--accent);font-weight:700">&nbsp;K</span> colors</div>
+              <div class="viewport"><canvas id="canvasReduced"></canvas></div>
+            </div>
+          </div>
+
+          <!-- compare -->
+          <div id="viewCompare" class="hidden" role="tabpanel" aria-labelledby="tabCompare">
+            <div class="compare" id="compare">
+              <canvas id="cmpOrig"></canvas>
+              <div class="after-clip" id="afterClip"><canvas id="cmpReduced"></canvas></div>
+              <span class="compare-badge l">Original</span>
+              <span class="compare-badge r">Reduced</span>
+              <input type="range" min="0" max="100" value="50" class="compare-range" id="compareRange" aria-label="Reveal reduced image" aria-valuetext="50% reduced">
+              <div class="compare-divider" id="cmpDivider"></div>
+              <div class="compare-handle" id="cmpHandle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6-4 6 4 6M15 6l4 6-4 6"/></svg></div>
+            </div>
+          </div>
+
+          <div id="afterLoadRow" class="hidden" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+            <div class="samples" id="samplesLoaded" style="margin-top:0"></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="computing-note hidden" id="computingNote">
+                <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+                clustering…
+              </span>
+              <button class="btn small" id="changeImgBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                New image
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PALETTE -->
+      <section class="card reveal" id="paletteCard" style="animation-delay:.1s;margin-top:24px">
+        <div class="pal-toolbar">
+          <div class="k-label-wrap">
+            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Discovered palette</h2>
+            <span class="control-desc">Colors K-Means found on its own — not chosen by a person. Click any swatch to copy its hex code.</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
+            <div class="seg" role="group" aria-label="Sort palette">
+              <button id="sortCoverage"  aria-pressed="true">Coverage</button>
+              <button id="sortLuminance" aria-pressed="false">Luminance</button>
+            </div>
+          </div>
+        </div>
+        <div class="palette" id="palette" aria-live="polite">
+          <p style="color:var(--ink-mute);font-size:14px;padding:8px">Load an image to reveal its palette.</p>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section class="card reveal explainer" style="animation-delay:.15s;margin-top:24px">
+        <details open>
+          <summary class="card-head" style="cursor:pointer;list-style:none">
+            <h2>How this works <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— for students</span></h2>
+            <span class="badge">read me</span>
+          </summary>
+          <div class="card-pad" style="padding-top:6px">
+            <div class="rgb-explain">
+              <svg width="140" height="116" viewBox="0 0 140 116" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g stroke="var(--line-strong)" stroke-width="1.5" stroke-linejoin="round">
+                  <path d="M40 26 H92 V78 H40 Z" opacity=".45"/>
+                  <path d="M52 40 H104 V92 H52 Z"/>
+                  <path d="M40 26 L52 40 M92 26 L104 40 M92 78 L104 92 M40 78 L52 92" opacity=".6"/>
+                </g>
+                <g stroke-width="2.2" stroke-linecap="round">
+                  <path d="M52 92 H104" stroke="#d34122"/>
+                  <path d="M52 92 V40" stroke="#1f9a4f"/>
+                  <path d="M52 92 L40 78" stroke="#2f7bd4"/>
+                </g>
+                <text x="107" y="106" fill="#d34122" font-size="12" font-family="ui-monospace,monospace" font-weight="700">R</text>
+                <text x="38" y="36" fill="#1f9a4f" font-size="12" font-family="ui-monospace,monospace" font-weight="700">G</text>
+                <text x="22" y="74" fill="#2f7bd4" font-size="12" font-family="ui-monospace,monospace" font-weight="700">B</text>
+                <circle cx="86" cy="60" r="5.5" fill="#d34122"/>
+                <circle cx="72" cy="70" r="4" fill="#1f7a75"/>
+                <circle cx="94" cy="50" r="4" fill="#b8860b"/>
+                <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
+              </svg>
+              <div class="txt">Every pixel is really just three numbers — <b>R</b>ed, <b>G</b>reen, <b>B</b>lue. That makes it a single point floating in a 3-D “color space.” A whole photo is a <b>cloud of millions of these points</b>. K-Means’ job is to find the <b>K</b> best spots in that cloud.</div>
+            </div>
+
+            <div class="cols">
+              <div>
+                <div class="steps">
+                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Drop K markers (the “means”) into the cloud of colors.</p></div>
+                  <div class="step"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins its nearest marker — that splits the cloud into K groups.</p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Each marker slides to the average color of the pixels that joined it.</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Repeat.</strong> Do 2–3 again and again. When the markers stop moving, it has <strong>“converged.”</strong></p></div>
+                </div>
+                <p>Then we <strong>repaint</strong> every pixel with its group’s marker color. K colors, one photo — that’s the palette on the right.</p>
+                <div class="callout">
+                  Nobody labeled the pixels or told the algorithm which colors mattered — so this is <strong>unsupervised</strong> learning. The palette is a <em>rule the algorithm discovered by itself</em>, not one we wrote. Hit <strong>Re-seed</strong> and you may get a slightly different answer, because it starts from a random guess.
+                </div>
+              </div>
+
+              <div class="mini">
+                <div class="mini-head">
+                  <span class="mini-title">See it in miniature</span>
+                  <span class="mini-phase" id="miniPhase">assigning…</span>
+                </div>
+                <canvas id="miniDemo" width="480" height="300" role="img" aria-label="An animation showing three markers repeatedly jumping to the center of their nearest group of points until they settle."></canvas>
+                <div class="mini-legend">
+                  <span><span class="d"></span> point = a pixel</span>
+                  <span><span class="r"></span> ring = a “mean” (marker)</span>
+                </div>
+                <div class="mini-cap">Same idea as above, shown flat in 2-D with 3 markers. Watch each ring jump to the middle of its color group, over and over, until it stops. This is exactly what happens to your photo — just in 3-D.</div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+      <!-- K CONTROL -->
+      <section class="card reveal" style="animation-delay:.08s">
+        <div class="card-pad k-block">
+          <div class="k-top">
+            <div class="k-label-wrap">
+              <span class="k-label">Number of colors <span aria-hidden="true" style="color:var(--ink-mute);font-weight:400">(K)</span></span>
+              <span class="control-desc k-desc">Drag to set how many colors K-Means may keep. Fewer = bold &amp; poster-like; more = closer to the photo.</span>
+            </div>
+            <span class="k-value" id="kValue">8<span class="unit">colors</span></span>
+          </div>
+          <input type="range" min="2" max="32" value="8" step="1" class="slider" id="kSlider" aria-label="Number of colors K" aria-valuemin="2" aria-valuemax="32" aria-valuenow="8">
+          <div class="k-scale"><span>2</span><span>8</span><span>16</span><span>24</span><span>32</span></div>
+        </div>
+      </section>
+
+      <!-- WATCH IT LEARN -->
+      <section class="card reveal" style="animation-delay:.12s">
+        <div class="card-head">
+          <h2>Watch it learn</h2>
+          <span class="badge">replay</span>
+        </div>
+        <div class="card-pad learn">
+          <p class="control-desc" style="margin-bottom:2px">Press play to replay every step. The reduced image above sharpens as the colors settle into place.</p>
+          <div class="learn-status">
+            <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
+            <span class="badge" id="convBadge">idle</span>
+          </div>
+          <div class="itertrack"><div class="fill" id="iterFill"></div></div>
+          <div class="transport">
+            <button class="btn small" id="playBtn" disabled>
+              <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span id="playLabel">Play</span>
+            </button>
+            <button class="btn small" id="stepBtn" disabled title="Advance one iteration">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14l9-7zM17 5h2v14h-2z"/></svg>
+              Step
+            </button>
+            <button class="btn small" id="restartBtn" disabled title="Restart animation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- OPTIONS -->
+      <section class="card reveal" style="animation-delay:.16s;overflow:hidden">
+        <details class="acc" style="border-top:0">
+          <summary>
+            <span style="display:flex;align-items:center;gap:8px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+              Algorithm options
+            </span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="m9 6 6 6-6 6"/></svg>
+          </summary>
+          <div class="acc-body">
+            <div class="opt-row">
+              <div class="lblwrap">
+                <span class="lbl">Color space</span>
+                <div class="control-desc">How “distance” between colors is measured. <b>LAB</b> matches human vision, so groups often look more natural; <b>RGB</b> is the raw, faster option.</div>
+              </div>
+              <div class="segsm" role="group" aria-label="Color space">
+                <button id="csRGB" aria-pressed="true">RGB</button>
+                <button id="csLAB" aria-pressed="false">LAB</button>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="lblwrap">
+                <span class="lbl">Where markers start</span>
+                <div class="control-desc"><b>k-means++</b> spreads the first guesses apart (better, steadier results). <b>random</b> scatters them, so you’ll see more dramatic learning.</div>
+              </div>
+              <div class="segsm" role="group" aria-label="Initialization method">
+                <button id="initPP"     aria-pressed="true">k-means++</button>
+                <button id="initRandom" aria-pressed="false">random</button>
+              </div>
+            </div>
+            <div class="opt-row" style="border-bottom:0">
+              <div class="lblwrap">
+                <span class="lbl">Try a new starting guess</span>
+                <div class="control-desc">Same photo, fresh random start — results can vary. That’s K-Means being unsupervised.</div>
+              </div>
+              <button class="btn small" id="reseedBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                Re-seed
+              </button>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- DOWNLOADS -->
+      <section class="card reveal" style="animation-delay:.2s">
+        <div class="card-head"><h2>Export</h2><span class="sub">offline &amp; free</span></div>
+        <div class="card-pad">
+          <div class="dl-grid">
+            <button class="btn small" id="dlPng" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              Reduced PNG
+            </button>
+            <button class="btn small" id="dlSwatch" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              Swatch PNG
+            </button>
+            <button class="btn small" id="dlJson" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H6a2 2 0 0 0-2 2v4l-2 3 2 3v4a2 2 0 0 0 2 2h2M16 3h2a2 2 0 0 1 2 2v4l2 3-2 3v4a2 2 0 0 1-2 2h-2"/></svg>
+              Palette JSON
+            </button>
+            <button class="btn small" id="dlCss" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 8-4 4 4 4M17 8l4 4-4 4M14 4l-4 16"/></svg>
+              CSS vars
+            </button>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span>Chroma Lab · a K-Means teaching tool. Everything runs locally — <strong>no uploads, works offline</strong>.</span>
+    <span>Tip: read the source — the K-Means loop is commented for students.</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+ *  CHROMA · main thread
+ *  Responsibilities: UI, image loading, talking to the K-Means worker,
+ *  painting canvases, palette, animation playback, exports.
+ *  The actual K-Means math lives in the Web Worker (WORKER_SOURCE).
+ * ===================================================================== */
+
+/* ---------- tiny helpers ---------- */
+const $ = (id)=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- color conversions (needed on main thread too) ----------
+ * We store each pixel as a point in the chosen "color space":
+ *   RGB → the raw 0..255 channels
+ *   LAB → perceptually-uniform CIE L*a*b* (distances match human vision)
+ * The worker clusters these points; here we convert back to RGB to paint.
+ */
+function srgbToLinear(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function linearToSrgb(c){const v=c<=0.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-0.055;return clamp(Math.round(v*255),0,255);}
+function rgbToLab(r,g,b){
+  const R=srgbToLinear(r),G=srgbToLinear(g),B=srgbToLinear(b);
+  // linear RGB → XYZ (D65)
+  let x=(R*0.4124+G*0.3576+B*0.1805)/0.95047;
+  let y=(R*0.2126+G*0.7152+B*0.0722);
+  let z=(R*0.0193+G*0.1192+B*0.9505)/1.08883;
+  const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
+  x=f(x);y=f(y);z=f(z);
+  return [116*y-16, 500*(x-y), 200*(y-z)];
+}
+function labToRgb(L,a,b){
+  let y=(L+16)/116, x=a/500+y, z=y-b/200;
+  const fi=t=>{const t3=t*t*t;return t3>0.008856?t3:(t-16/116)/7.787;};
+  x=fi(x)*0.95047; y=fi(y); z=fi(z)*1.08883;
+  const R= x*3.2406 + y*-1.5372 + z*-0.4986;
+  const G= x*-0.9689+ y*1.8758  + z*0.0415;
+  const B= x*0.0557 + y*-0.2040 + z*1.0570;
+  return [linearToSrgb(R),linearToSrgb(G),linearToSrgb(B)];
+}
+const toHex=(r,g,b)=>'#'+[r,g,b].map(v=>clamp(v,0,255).toString(16).padStart(2,'0')).join('');
+// relative luminance (for sorting & readable swatch text)
+const luminance=(r,g,b)=>0.2126*srgbToLinear(r)+0.7152*srgbToLinear(g)+0.0722*srgbToLinear(b);
+
+/* ---------- app state ---------- */
+const state={
+  img:null,                 // HTMLCanvasElement holding the source image at display size
+  displayW:0, displayH:0,
+  displayColor:null,        // Float32Array of display pixels in current color space
+  computeColor:null,        // Float32Array of downscaled pixels (sent to worker)
+  computeW:0, computeH:0,
+  computeLabels:null,       // labels for downscaled pixels (for animation)
+  K:8,
+  colorSpace:'rgb',
+  init:'kmeanspp',
+  seed:(Math.random()*1e9)|0,
+  sort:'coverage',
+  centers:null,             // final centers in color space
+  centersRGB:null,          // final centers as [r,g,b]
+  coverage:null,            // fraction 0..1 per center (from full-res assignment)
+  history:null,             // array of {centers, labels} snapshots for animation
+  converged:false,
+  iterations:0,
+  reqId:0,                  // guards against stale worker replies
+  activeSample:null,
+};
+
+const DISPLAY_MAX=1400;     // cap displayed/exported resolution (crisp on a projector)
+const COMPUTE_MAX=240;      // downscale for clustering — keeps it snappy but detailed
+
+/* ---------- canvases ---------- */
+const cvOrig=$('canvasOrig'), cvRed=$('canvasReduced');
+const cmpOrig=$('cmpOrig'), cmpRed=$('cmpReduced');
+const octx=cvOrig.getContext('2d'), rctx=cvRed.getContext('2d',{willReadFrequently:false});
+
+/* =====================================================================
+ *  WORKER — spun up from an inline Blob so the file stays self-contained
+ *  and works fully offline (no separate .js file, no CDN).
+ * ===================================================================== */
+const WORKER_SOURCE = `
+"use strict";
+/* Deterministic RNG (mulberry32) so a given 'seed' always reproduces a run. */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* Squared Euclidean distance between two 3-D color points. */
+function dist2(p,pi,c,ci){const dx=p[pi]-c[ci],dy=p[pi+1]-c[ci+1],dz=p[pi+2]-c[ci+2];return dx*dx+dy*dy+dz*dz;}
+
+/* ---- INITIALISATION: where do the K markers start? ---- */
+function initRandom(pts,N,K,rng){
+  const c=new Float32Array(K*3);
+  for(let k=0;k<K;k++){const i=(rng()*N|0)*3;c[k*3]=pts[i];c[k*3+1]=pts[i+1];c[k*3+2]=pts[i+2];}
+  return c;
+}
+/* k-means++ : pick markers spread apart. Each new marker is chosen with
+   probability proportional to its squared distance from the nearest
+   marker already chosen — so clumps are avoided. */
+function initPlusPlus(pts,N,K,rng){
+  const c=new Float32Array(K*3);
+  let i0=(rng()*N|0);
+  c[0]=pts[i0*3];c[1]=pts[i0*3+1];c[2]=pts[i0*3+2];
+  const d=new Float64Array(N).fill(Infinity);
+  for(let k=1;k<K;k++){
+    let sum=0;
+    for(let i=0;i<N;i++){
+      const dk=dist2(pts,i*3,c,(k-1)*3);
+      if(dk<d[i])d[i]=dk;
+      sum+=d[i];
+    }
+    let r=rng()*sum, idx=N-1;
+    for(let i=0;i<N;i++){r-=d[i];if(r<=0){idx=i;break;}}
+    c[k*3]=pts[idx*3];c[k*3+1]=pts[idx*3+1];c[k*3+2]=pts[idx*3+2];
+  }
+  return c;
+}
+
+/* ---- THE K-MEANS LOOP (Lloyd's algorithm) ----
+   pts   : Float32Array of N points, 3 numbers each (the pixels)
+   K     : number of clusters/colors
+   Returns the final markers plus a HISTORY of every iteration so the
+   UI can animate the markers moving and the image sharpening. */
+function kmeans(pts,N,K,initMode,seed,maxIter,tol){
+  const rng=mulberry32(seed>>>0);
+  let centers = initMode==='random'? initRandom(pts,N,K,rng) : initPlusPlus(pts,N,K,rng);
+  const labels=new Uint8Array(N);       // which marker each pixel belongs to
+  const history=[];
+  let converged=false, iter=0;
+
+  for(iter=0; iter<maxIter; iter++){
+    // 1) ASSIGN — attach every pixel to its nearest marker
+    for(let i=0;i<N;i++){
+      let best=0,bd=Infinity;
+      for(let k=0;k<K;k++){const dd=dist2(pts,i*3,centers,k*3);if(dd<bd){bd=dd;best=k;}}
+      labels[i]=best;
+    }
+    // snapshot BEFORE moving markers → the frame the student sees
+    history.push({centers:centers.slice(0), labels:labels.slice(0)});
+
+    // 2) UPDATE — move each marker to the mean color of its pixels
+    const sum=new Float64Array(K*3), cnt=new Uint32Array(K);
+    for(let i=0;i<N;i++){const k=labels[i];sum[k*3]+=pts[i*3];sum[k*3+1]+=pts[i*3+1];sum[k*3+2]+=pts[i*3+2];cnt[k]++;}
+    let moved=0;
+    const next=new Float32Array(K*3);
+    for(let k=0;k<K;k++){
+      if(cnt[k]===0){ // empty cluster? re-seed it at a random pixel so no color is wasted
+        const i=(rng()*N|0)*3; next[k*3]=pts[i];next[k*3+1]=pts[i+1];next[k*3+2]=pts[i+2];
+        moved+=1e9; continue;
+      }
+      const nx=sum[k*3]/cnt[k], ny=sum[k*3+1]/cnt[k], nz=sum[k*3+2]/cnt[k];
+      const dx=nx-centers[k*3],dy=ny-centers[k*3+1],dz=nz-centers[k*3+2];
+      moved+=dx*dx+dy*dy+dz*dz;
+      next[k*3]=nx;next[k*3+1]=ny;next[k*3+2]=nz;
+    }
+    centers=next;
+    // 3) STOP when the markers barely move — they've "converged"
+    if(moved<tol){converged=true; iter++; break;}
+  }
+  // one last assignment against the final markers
+  for(let i=0;i<N;i++){
+    let best=0,bd=Infinity;
+    for(let k=0;k<K;k++){const dd=dist2(pts,i*3,centers,k*3);if(dd<bd){bd=dd;best=k;}}
+    labels[i]=best;
+  }
+  return {centers, labels, history, converged, iterations:iter};
+}
+
+onmessage=(e)=>{
+  const d=e.data;
+  const res=kmeans(d.pts,d.N,d.K,d.init,d.seed,d.maxIter,d.tol);
+  postMessage({reqId:d.reqId, centers:res.centers, labels:res.labels, history:res.history,
+               converged:res.converged, iterations:res.iterations});
+};
+`;
+let worker=null;
+function makeWorker(){
+  const blob=new Blob([WORKER_SOURCE],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  worker=new Worker(url);
+  worker.onmessage=onWorkerDone;
+}
+makeWorker();
+
+/* =====================================================================
+ *  IMAGE LOADING  &  COLOR-SPACE PREP
+ * ===================================================================== */
+function loadImageFromSource(src, sampleId){
+  const im=new Image();
+  im.onload=()=>{ setImage(im); state.activeSample=sampleId||null; refreshSampleActive(); };
+  im.onerror=()=>alert('Could not load that image.');
+  im.src=src;
+}
+function setImage(source){
+  // scale down to DISPLAY_MAX for painting/exporting
+  const iw=source.width||source.naturalWidth, ih=source.height||source.naturalHeight;
+  const scale=Math.min(1, DISPLAY_MAX/Math.max(iw,ih));
+  const w=Math.max(1,Math.round(iw*scale)), h=Math.max(1,Math.round(ih*scale));
+  const c=document.createElement('canvas'); c.width=w;c.height=h;
+  c.getContext('2d').drawImage(source,0,0,w,h);
+  state.img=c; state.displayW=w; state.displayH=h;
+
+  // size the visible canvases
+  [cvOrig,cvRed,cmpOrig,cmpRed].forEach(cv=>{cv.width=w;cv.height=h;});
+  octx.drawImage(c,0,0);
+  cmpOrig.getContext('2d').drawImage(c,0,0);
+
+  prepColorData();
+  revealLoadedUI(iw,ih);
+  scheduleCompute(true);
+}
+
+/* Convert display + downscaled pixels into the active color space once,
+   so re-quantizing (dragging K) doesn't reconvert every time. */
+function prepColorData(){
+  const {displayW:w, displayH:h}=state;
+  const dimg=octx.getImageData(0,0,w,h).data;
+  const N=w*h;
+  const disp=new Float32Array(N*3);
+  const lab=state.colorSpace==='lab';
+  for(let i=0;i<N;i++){
+    const r=dimg[i*4],g=dimg[i*4+1],b=dimg[i*4+2];
+    if(lab){const L=rgbToLab(r,g,b);disp[i*3]=L[0];disp[i*3+1]=L[1];disp[i*3+2]=L[2];}
+    else{disp[i*3]=r;disp[i*3+1]=g;disp[i*3+2]=b;}
+  }
+  state.displayColor=disp;
+
+  // downscaled compute image
+  const cs=Math.min(1, COMPUTE_MAX/Math.max(w,h));
+  const cw=Math.max(1,Math.round(w*cs)), ch=Math.max(1,Math.round(h*cs));
+  const tmp=document.createElement('canvas');tmp.width=cw;tmp.height=ch;
+  tmp.getContext('2d').drawImage(state.img,0,0,cw,ch);
+  const cimg=tmp.getContext('2d').getImageData(0,0,cw,ch).data;
+  const M=cw*ch, comp=new Float32Array(M*3);
+  for(let i=0;i<M;i++){
+    const r=cimg[i*4],g=cimg[i*4+1],b=cimg[i*4+2];
+    if(lab){const L=rgbToLab(r,g,b);comp[i*3]=L[0];comp[i*3+1]=L[1];comp[i*3+2]=L[2];}
+    else{comp[i*3]=r;comp[i*3+1]=g;comp[i*3+2]=b;}
+  }
+  state.computeColor=comp;state.computeW=cw;state.computeH=ch;
+}
+
+/* =====================================================================
+ *  COMPUTE PIPELINE — debounced; hands off to the worker
+ * ===================================================================== */
+let debounceTimer=null;
+function scheduleCompute(immediate){
+  clearTimeout(debounceTimer);
+  const run=()=>{
+    if(!state.computeColor)return;
+    stopPlayback();
+    const N=state.computeW*state.computeH;
+    const reqId=++state.reqId;
+    $('computingNote').classList.remove('hidden');
+    // Stop when the TOTAL squared movement of all markers drops below this.
+    // 'moved' is a sum of squared center shifts (not scaled by pixel count),
+    // so this is a small absolute number. A tight threshold lets students see
+    // several refinement steps instead of the markers snapping into place at once.
+    const tol = state.colorSpace==='lab' ? 0.004 : 0.04;
+    worker.postMessage({
+      reqId, pts:state.computeColor, N, K:state.K,
+      init:state.init, seed:state.seed, maxIter:60, tol
+    });
+  };
+  if(immediate) run(); else debounceTimer=setTimeout(run,140);
+}
+
+function onWorkerDone(e){
+  const d=e.data;
+  if(d.reqId!==state.reqId) return;           // ignore stale results
+  $('computingNote').classList.add('hidden');
+  state.centers=d.centers;
+  state.history=d.history;
+  state.converged=d.converged;
+  state.iterations=d.iterations;
+
+  // centers → RGB for painting/swatches
+  const K=state.K, cRGB=[];
+  for(let k=0;k<K;k++){
+    if(state.colorSpace==='lab') cRGB.push(labToRgb(d.centers[k*3],d.centers[k*3+1],d.centers[k*3+2]));
+    else cRGB.push([Math.round(d.centers[k*3]),Math.round(d.centers[k*3+1]),Math.round(d.centers[k*3+2])]);
+  }
+  state.centersRGB=cRGB;
+
+  paintReduced(d.centers, cRGB);              // full-res repaint + coverage
+  buildPalette();
+  enableExports();
+
+  // wire up the animation using the returned history
+  setupPlayback();
+  updateReducedLabel();
+}
+
+/* Repaint the DISPLAY-resolution image: assign each pixel to its nearest
+   final marker and recolor it. Also tallies coverage % per color. */
+function paintReduced(centers, cRGB){
+  const {displayW:w, displayH:h, displayColor:pts}=state;
+  const N=w*h, K=state.K;
+  const out=octx.getImageData(0,0,w,h);       // reuse buffer shape
+  const od=out.data;
+  const counts=new Uint32Array(K);
+  for(let i=0;i<N;i++){
+    let best=0,bd=Infinity;
+    const pi=i*3;
+    for(let k=0;k<K;k++){
+      const ci=k*3;
+      const dx=pts[pi]-centers[ci],dy=pts[pi+1]-centers[ci+1],dz=pts[pi+2]-centers[ci+2];
+      const dd=dx*dx+dy*dy+dz*dz;
+      if(dd<bd){bd=dd;best=k;}
+    }
+    counts[best]++;
+    const c=cRGB[best];
+    od[i*4]=c[0];od[i*4+1]=c[1];od[i*4+2]=c[2];od[i*4+3]=255;
+  }
+  rctx.putImageData(out,0,0);
+  cmpRed.getContext('2d').putImageData(out,0,0);
+  state.coverage=Array.from(counts,c=>c/N);
+}
+
+/* =====================================================================
+ *  PALETTE
+ * ===================================================================== */
+function buildPalette(){
+  const host=$('palette'); host.innerHTML='';
+  const K=state.K;
+  let items=[];
+  for(let k=0;k<K;k++){
+    const [r,g,b]=state.centersRGB[k];
+    items.push({r,g,b,hex:toHex(r,g,b),cov:state.coverage?state.coverage[k]:0,lum:luminance(r,g,b)});
+  }
+  if(state.sort==='coverage') items.sort((a,b)=>b.cov-a.cov);
+  else items.sort((a,b)=>b.lum-a.lum);
+
+  items.forEach((it,idx)=>{
+    const el=document.createElement('button');
+    el.className='swatch';
+    el.style.animationDelay=(idx*22)+'ms';
+    el.setAttribute('aria-label',`Color ${it.hex}, ${(it.cov*100).toFixed(1)} percent of image. Click to copy.`);
+    const textColor = it.lum>0.42 ? '#141210' : '#ffffff';
+    el.innerHTML=`
+      <div class="chip" style="background:${it.hex}">
+        <div class="cov" style="width:${Math.max(3,it.cov*100)}%"></div>
+      </div>
+      <div class="meta">
+        <div class="hex" style="">${it.hex}</div>
+        <div class="pct">${(it.cov*100).toFixed(1)}% of image</div>
+      </div>
+      <div class="copied">Copied ✓</div>`;
+    el.addEventListener('click',()=>copyHex(it.hex,el));
+    host.appendChild(el);
+  });
+}
+function copyHex(hex,el){
+  const done=()=>{el.classList.add('just-copied');setTimeout(()=>el.classList.remove('just-copied'),850);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(hex).then(done).catch(()=>fallbackCopy(hex,done));}
+  else fallbackCopy(hex,done);
+}
+function fallbackCopy(t,cb){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();cb();}
+
+/* =====================================================================
+ *  WATCH IT LEARN — animation playback of the worker's history
+ * ===================================================================== */
+let play={playing:false, frame:0, timer:null};
+const previewCanvas=document.createElement('canvas'); // small offscreen for animation frames
+
+function setupPlayback(){
+  const h=state.history;
+  const has = h && h.length>0;
+  $('playBtn').disabled=!has; $('stepBtn').disabled=!has; $('restartBtn').disabled=!has;
+  play.frame=0;
+  $('iterMax').textContent = has? `/ ${h.length}`:'';
+  drawFrame(has? h.length-1 : 0, true); // show converged result by default
+  play.frame = has? h.length-1 : 0;
+  updateIterUI(true);
+}
+function drawFrame(idx, finalPaint){
+  const h=state.history; if(!h||!h.length)return;
+  idx=clamp(idx,0,h.length-1);
+  const snap=h[idx];
+  // convert this iteration's centers to RGB
+  const K=state.K, cRGB=[];
+  for(let k=0;k<K;k++){
+    if(state.colorSpace==='lab') cRGB.push(labToRgb(snap.centers[k*3],snap.centers[k*3+1],snap.centers[k*3+2]));
+    else cRGB.push([Math.round(snap.centers[k*3]),Math.round(snap.centers[k*3+1]),Math.round(snap.centers[k*3+2])]);
+  }
+  // paint the small downscaled image using this iteration's labels, then upscale
+  const cw=state.computeW, ch=state.computeH;
+  previewCanvas.width=cw;previewCanvas.height=ch;
+  const pctx=previewCanvas.getContext('2d');
+  const img=pctx.createImageData(cw,ch);
+  const lab=snap.labels;
+  for(let i=0;i<cw*ch;i++){const c=cRGB[lab[i]];img.data[i*4]=c[0];img.data[i*4+1]=c[1];img.data[i*4+2]=c[2];img.data[i*4+3]=255;}
+  pctx.putImageData(img,0,0);
+  // scale into the visible reduced canvases (smooth off = crisp posterized look while learning)
+  for(const cv of [cvRed,cmpRed]){
+    const ctx=cv.getContext('2d');
+    ctx.imageSmoothingEnabled=true;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.drawImage(previewCanvas,0,0,cw,ch,0,0,cv.width,cv.height);
+  }
+  play.frame=idx;
+  updateIterUI(idx===h.length-1 && state.converged);
+  // if we're on the last frame, use the crisp full-res render instead
+  if(finalPaint && idx===h.length-1){ paintReduced(state.centers,state.centersRGB); }
+}
+function updateIterUI(showConverged){
+  const h=state.history;
+  $('iterNum').textContent = h? (play.frame+1) : 0;
+  const badge=$('convBadge');
+  if(play.playing){badge.className='badge live';badge.innerHTML='<span class="pulse"></span> learning';}
+  else if(showConverged && state.converged){badge.className='badge done';badge.textContent='✓ converged';}
+  else if(h){badge.className='badge';badge.textContent='paused';}
+  else{badge.className='badge';badge.textContent='idle';}
+  const frac = h&&h.length>1 ? (play.frame/(h.length-1)) : 0;
+  $('iterFill').style.width=(frac*100)+'%';
+}
+function togglePlay(){
+  const h=state.history; if(!h||!h.length)return;
+  if(play.playing){stopPlayback();return;}
+  // restart if we're at the end
+  if(play.frame>=h.length-1) play.frame=0;
+  play.playing=true;
+  $('playIcon').innerHTML='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  $('playLabel').textContent='Pause';
+  const tick=()=>{
+    if(!play.playing)return;
+    drawFrame(play.frame,false);
+    if(play.frame>=h.length-1){stopPlayback();updateIterUI(true);return;}
+    play.frame++;
+    play.timer=setTimeout(tick,650);
+  };
+  tick();
+}
+function stopPlayback(){
+  play.playing=false;
+  clearTimeout(play.timer);
+  $('playIcon').innerHTML='<path d="M8 5v14l11-7z"/>';
+  $('playLabel').textContent='Play';
+  updateIterUI(play.frame===((state.history&&state.history.length-1)||0) && state.converged);
+}
+function stepOnce(){
+  const h=state.history; if(!h||!h.length)return;
+  stopPlayback();
+  play.frame=clamp(play.frame+1,0,h.length-1);
+  drawFrame(play.frame, play.frame===h.length-1);
+}
+function restartAnim(){
+  const h=state.history; if(!h||!h.length)return;
+  stopPlayback(); play.frame=0; drawFrame(0,false);
+}
+
+/* =====================================================================
+ *  EXPORTS
+ * ===================================================================== */
+function enableExports(){['dlPng','dlSwatch','dlJson','dlCss'].forEach(id=>$(id).disabled=false);}
+function download(filename, blob){
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function paletteData(){
+  const K=state.K, arr=[];
+  for(let k=0;k<K;k++){const [r,g,b]=state.centersRGB[k];arr.push({hex:toHex(r,g,b),rgb:[r,g,b],coverage:+(state.coverage[k]).toFixed(4)});}
+  return state.sort==='coverage'?arr.sort((a,b)=>b.coverage-a.coverage):arr.sort((a,b)=>luminance(...b.rgb)-luminance(...a.rgb));
+}
+function exportPng(){cvRed.toBlob(b=>download(`chroma-K${state.K}.png`,b));}
+function exportJson(){
+  const data={colors:state.K,colorSpace:state.colorSpace.toUpperCase(),palette:paletteData()};
+  download(`chroma-palette-K${state.K}.json`, new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+}
+function exportCss(){
+  const p=paletteData();
+  let css=`:root{\n  /* Palette discovered by K-Means · K=${state.K} */\n`;
+  p.forEach((c,i)=>{css+=`  --chroma-${i+1}: ${c.hex}; /* ${(c.coverage*100).toFixed(1)}% */\n`;});
+  css+='}\n';
+  download(`chroma-palette-K${state.K}.css`, new Blob([css],{type:'text/css'}));
+}
+function exportSwatch(){
+  const p=paletteData(), n=p.length;
+  const cols=Math.min(n,8), rows=Math.ceil(n/cols);
+  const cw=200, chh=200, pad=0, labelH=44;
+  const c=document.createElement('canvas'); c.width=cols*cw; c.height=rows*(chh+labelH);
+  const ctx=c.getContext('2d');
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--surface');ctx.fillRect(0,0,c.width,c.height);
+  p.forEach((col,i)=>{
+    const x=(i%cols)*cw, y=Math.floor(i/cols)*(chh+labelH);
+    ctx.fillStyle=col.hex;ctx.fillRect(x,y,cw,chh);
+    ctx.fillStyle=luminance(...col.rgb)>0.42?'#141210':'#ffffff';
+    ctx.font='600 22px ui-monospace,monospace';ctx.textBaseline='middle';
+    ctx.fillText(col.hex.toUpperCase(), x+16, y+chh-24);
+    // label strip
+    ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--surface');ctx.fillRect(x,y+chh,cw,labelH);
+    ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--ink-mute');
+    ctx.font='500 16px ui-monospace,monospace';
+    ctx.fillText((col.coverage*100).toFixed(1)+'%', x+16, y+chh+labelH/2);
+  });
+  c.toBlob(b=>download(`chroma-swatches-K${state.K}.png`,b));
+}
+
+/* =====================================================================
+ *  UI WIRING
+ * ===================================================================== */
+// --- reveal loaded UI, hide dropzone ---
+function revealLoadedUI(iw,ih){
+  $('dropzone').classList.add('hidden');
+  $('afterLoadRow').classList.remove('hidden');
+  $('origDims').textContent=`${iw}×${ih}px`;
+  showView(currentView);
+  buildSamples($('samplesLoaded'));
+}
+function updateReducedLabel(){$('redK').textContent=` ${state.K} `;}
+
+// --- K slider ---
+const kSlider=$('kSlider');
+function setKFill(){const pct=((state.K-2)/(32-2))*100;kSlider.style.setProperty('--fill',pct+'%');}
+kSlider.addEventListener('input',()=>{
+  state.K=+kSlider.value;
+  $('kValue').innerHTML=state.K+'<span class="unit">colors</span>';
+  kSlider.setAttribute('aria-valuenow',state.K);
+  updateReducedLabel(); setKFill();
+  if(state.img) scheduleCompute(false);
+});
+setKFill();
+
+// --- view tabs (side by side / compare) ---
+let currentView='sbs';
+function showView(v){
+  currentView=v;
+  const sbs=v==='sbs';
+  $('tabSbs').setAttribute('aria-selected',sbs);$('tabCompare').setAttribute('aria-selected',!sbs);
+  if(!state.img)return;
+  $('viewSbs').classList.toggle('hidden',!sbs);
+  $('viewCompare').classList.toggle('hidden',sbs);
+  if(!sbs) layoutCompare();
+}
+$('tabSbs').addEventListener('click',()=>showView('sbs'));
+$('tabCompare').addEventListener('click',()=>showView('compare'));
+
+// --- compare slider ---
+const compareRange=$('compareRange');
+function setCompare(pct){
+  pct=clamp(pct,0,100);
+  $('afterClip').style.width=pct+'%';
+  $('cmpDivider').style.left=pct+'%';
+  $('cmpHandle').style.left=pct+'%';
+  compareRange.value=pct;
+  compareRange.setAttribute('aria-valuetext',Math.round(pct)+'% reduced');
+}
+function layoutCompare(){
+  // ensure the clipped 'after' canvas matches displayed size
+  const w=$('compare').clientWidth;
+  setCompare(+compareRange.value);
+}
+compareRange.addEventListener('input',()=>setCompare(+compareRange.value));
+// pointer drag anywhere on the image
+let dragging=false;
+function pointToPct(clientX){const r=$('compare').getBoundingClientRect();return ((clientX-r.left)/r.width)*100;}
+$('compare').addEventListener('pointerdown',e=>{dragging=true;setCompare(pointToPct(e.clientX));compareRange.focus();});
+window.addEventListener('pointermove',e=>{if(dragging)setCompare(pointToPct(e.clientX));});
+window.addEventListener('pointerup',()=>dragging=false);
+window.addEventListener('resize',()=>{if(currentView==='compare')layoutCompare();});
+
+// --- palette sort ---
+$('sortCoverage').addEventListener('click',()=>setSort('coverage'));
+$('sortLuminance').addEventListener('click',()=>setSort('luminance'));
+function setSort(s){
+  state.sort=s;
+  $('sortCoverage').setAttribute('aria-pressed',s==='coverage');
+  $('sortLuminance').setAttribute('aria-pressed',s==='luminance');
+  if(state.centersRGB) buildPalette();
+}
+
+// --- options ---
+function setColorSpace(cs){
+  state.colorSpace=cs;
+  $('csRGB').setAttribute('aria-pressed',cs==='rgb');
+  $('csLAB').setAttribute('aria-pressed',cs==='lab');
+  if(state.img){prepColorData();scheduleCompute(false);}
+}
+$('csRGB').addEventListener('click',()=>setColorSpace('rgb'));
+$('csLAB').addEventListener('click',()=>setColorSpace('lab'));
+function setInit(m){
+  state.init=m;
+  $('initPP').setAttribute('aria-pressed',m==='kmeanspp');
+  $('initRandom').setAttribute('aria-pressed',m==='random');
+  if(state.img)scheduleCompute(false);
+}
+$('initPP').addEventListener('click',()=>setInit('kmeanspp'));
+$('initRandom').addEventListener('click',()=>setInit('random'));
+$('reseedBtn').addEventListener('click',()=>{state.seed=(Math.random()*1e9)|0;if(state.img)scheduleCompute(true);});
+
+// --- transport ---
+$('playBtn').addEventListener('click',togglePlay);
+$('stepBtn').addEventListener('click',stepOnce);
+$('restartBtn').addEventListener('click',restartAnim);
+
+// --- exports ---
+$('dlPng').addEventListener('click',exportPng);
+$('dlSwatch').addEventListener('click',exportSwatch);
+$('dlJson').addEventListener('click',exportJson);
+$('dlCss').addEventListener('click',exportCss);
+
+// --- file input / dropzone ---
+const fileInput=$('fileInput');
+$('pickBtn').addEventListener('click',()=>fileInput.click());
+$('changeImgBtn').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(f)readFile(f);});
+function readFile(file){
+  if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+  const fr=new FileReader();
+  fr.onload=()=>{state.activeSample=null;refreshSampleActive();loadImageFromSource(fr.result);};
+  fr.readAsDataURL(file);
+}
+const dz=$('dropzone');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&dz.contains(e.relatedTarget))return;dz.classList.remove('drag');}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readFile(f);});
+// also accept drops anywhere on the stage once loaded
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{if(dz.classList.contains('hidden')){e.preventDefault();const f=e.dataTransfer.files[0];if(f)readFile(f);}});
+
+// --- theme ---
+const themeToggle=$('themeToggle');
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('chroma-theme',t);}catch(e){}}
+themeToggle.addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='dark'?'light':'dark');
+});
+(function initTheme(){
+  let t=null;try{t=localStorage.getItem('chroma-theme');}catch(e){}
+  if(!t)t=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  applyTheme(t);
+})();
+
+/* =====================================================================
+ *  BUILT-IN SAMPLE IMAGES
+ *  Generated procedurally on a canvas so the app is 100% self-contained
+ *  and works offline — no external image files, no CDN.
+ * ===================================================================== */
+const SAMPLES=[
+  {id:'dusk',   name:'Dusk',    draw:drawDusk},
+  {id:'reef',   name:'Reef',    draw:drawReef},
+  {id:'grove',  name:'Grove',   draw:drawGrove},
+  {id:'bloom',  name:'Bloom',   draw:drawBloom},
+];
+function makeSampleCanvas(draw,w=1000,h=680){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);return c;}
+// 's' scales feature sizes/counts with the canvas so density looks the same
+// at any resolution (baseline tuned at 640px wide).
+function drawDusk(ctx,w,h){
+  const s=w/640;
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#20204a');g.addColorStop(.4,'#7b3d70');g.addColorStop(.68,'#d96b45');g.addColorStop(.85,'#f4b45c');g.addColorStop(1,'#f7d79b');
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  const sun=ctx.createRadialGradient(w*.68,h*.62,4,w*.68,h*.62,120*s);
+  sun.addColorStop(0,'#fff3d0');sun.addColorStop(.5,'#ffcf7a');sun.addColorStop(1,'rgba(255,180,90,0)');
+  ctx.fillStyle=sun;ctx.beginPath();ctx.arc(w*.68,h*.62,120*s,0,7);ctx.fill();
+  ctx.fillStyle='#ffe9b0';ctx.beginPath();ctx.arc(w*.68,h*.62,34*s,0,7);ctx.fill();
+  // hills silhouette
+  ctx.fillStyle='#2a1830';ctx.beginPath();ctx.moveTo(0,h);ctx.quadraticCurveTo(w*.3,h*.7,w*.55,h*.82);ctx.quadraticCurveTo(w*.8,h*.94,w,h*.78);ctx.lineTo(w,h);ctx.closePath();ctx.fill();
+}
+function drawReef(ctx,w,h){
+  const s=w/640;
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#0a3d55');g.addColorStop(.5,'#0f7d86');g.addColorStop(1,'#4fd0c7');
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  const cols=['#ffb347','#ff6b6b','#c86bd6','#3ad1c4','#ffe66d'];
+  for(let i=0;i<Math.round(70*s*s);i++){
+    ctx.fillStyle=cols[i%cols.length];ctx.globalAlpha=.65;
+    const x=Math.random()*w,y=h*.5+Math.random()*h*.5,r=(8+Math.random()*26)*s;
+    ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // light rays
+  ctx.globalAlpha=.12;ctx.fillStyle='#eaffff';
+  for(let i=0;i<6;i++){ctx.beginPath();const x=w*(.1+i*.16);ctx.moveTo(x,0);ctx.lineTo(x+40*s,0);ctx.lineTo(x+120*s,h);ctx.lineTo(x+80*s,h);ctx.closePath();ctx.fill();}
+  ctx.globalAlpha=1;
+}
+function drawGrove(ctx,w,h){
+  const s=w/640;
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#bfe3a0');g.addColorStop(.4,'#7bbf6a');g.addColorStop(1,'#2f6b3a');
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  // sun glow
+  const sun=ctx.createRadialGradient(w*.2,h*.2,4,w*.2,h*.2,180*s);
+  sun.addColorStop(0,'rgba(255,247,200,.9)');sun.addColorStop(1,'rgba(255,247,200,0)');
+  ctx.fillStyle=sun;ctx.fillRect(0,0,w,h);
+  const greens=['#245a30','#357a3e','#4b944f','#8fc46a','#c9e59a'];
+  for(let i=0;i<Math.round(40*s*s);i++){
+    const x=Math.random()*w,y=h*.35+Math.random()*h*.65,tw=(6+Math.random()*10)*s,th=(40+Math.random()*90)*s;
+    ctx.fillStyle='#4a3524';ctx.fillRect(x-tw/6,y,tw/3,th*.4);
+    ctx.fillStyle=greens[(Math.random()*greens.length)|0];
+    ctx.beginPath();ctx.moveTo(x,y-th);ctx.lineTo(x-tw,y);ctx.lineTo(x+tw,y);ctx.closePath();ctx.fill();
+  }
+}
+function drawBloom(ctx,w,h){
+  const s=w/640;
+  ctx.fillStyle='#f3ead9';ctx.fillRect(0,0,w,h);
+  const palette=['#e94f6b','#f2a03d','#f7c948','#8ec63f','#4bb3c4','#7b5ea7','#ef6aa8'];
+  for(let i=0;i<Math.round(26*s*s);i++){
+    const cx=Math.random()*w,cy=Math.random()*h,petals=6+((Math.random()*4)|0),R=(16+Math.random()*30)*s;
+    const col=palette[(Math.random()*palette.length)|0];
+    for(let p=0;p<petals;p++){
+      const a=(p/petals)*Math.PI*2;
+      ctx.fillStyle=col;ctx.globalAlpha=.85;
+      ctx.beginPath();ctx.ellipse(cx+Math.cos(a)*R*.5,cy+Math.sin(a)*R*.5,R*.5,R*.24,a,0,7);ctx.fill();
+    }
+    ctx.globalAlpha=1;ctx.fillStyle='#fff3b0';ctx.beginPath();ctx.arc(cx,cy,R*.28,0,7);ctx.fill();
+  }
+}
+// cache generated sample canvases + data URLs
+const sampleCache={};
+function getSample(id){
+  if(!sampleCache[id]){const def=SAMPLES.find(s=>s.id===id);const c=makeSampleCanvas(def.draw);sampleCache[id]={canvas:c,url:c.toDataURL('image/png')};}
+  return sampleCache[id];
+}
+function buildSamples(host){
+  host.innerHTML='';
+  SAMPLES.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='sample'+(state.activeSample===s.id?' active':'');
+    btn.setAttribute('data-sample',s.id);
+    btn.setAttribute('aria-label',`Use sample image: ${s.name}`);
+    const thumb=document.createElement('canvas');thumb.width=96;thumb.height=56;
+    const src=getSample(s.id).canvas;
+    thumb.getContext('2d').drawImage(src,0,0,96,56);
+    const span=document.createElement('span');span.textContent=s.name;
+    btn.appendChild(thumb);btn.appendChild(span);
+    btn.addEventListener('click',()=>loadImageFromSource(getSample(s.id).url,s.id));
+    host.appendChild(btn);
+  });
+}
+function refreshSampleActive(){
+  document.querySelectorAll('.sample').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('data-sample')===state.activeSample);
+  });
+}
+
+/* =====================================================================
+ *  LIVE 2-D DEMO (the "How this works" illustration)
+ *  A tiny, self-contained K-Means that loops forever on made-up 2-D
+ *  points so students ALWAYS see several assign→move steps play out,
+ *  no matter what photo is loaded.
+ * ===================================================================== */
+function initMiniDemo(){
+  const cv=$('miniDemo'); if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height, K=3;
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let pts=[], centroids=[], labels=[], step=0, phase='assign', t0=0, moveFrom=[], moveTo=[], raf=0;
+  const phaseText={assign:'step: assign → color each point', move:'step: move → jump to the middle', rest:'✓ settled — starting over'};
+  const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  // rough gaussian (sum of uniforms) so points form soft blobs
+  const gauss=(mx,my,s)=>({x:clampv(mx+(Math.random()+Math.random()+Math.random()-1.5)*s,16,W-16),
+                            y:clampv(my+(Math.random()+Math.random()+Math.random()-1.5)*s,16,H-16)});
+  function themeCols(){const cs=getComputedStyle(document.body);
+    return [cs.getPropertyValue('--accent').trim(), cs.getPropertyValue('--cyan').trim(), cs.getPropertyValue('--gold').trim()];}
+  function assign(){for(let i=0;i<pts.length;i++){let b=0,bd=1e9;for(let k=0;k<K;k++){const dx=pts[i].x-centroids[k].x,dy=pts[i].y-centroids[k].y,d=dx*dx+dy*dy;if(d<bd){bd=d;b=k;}}labels[i]=b;}}
+  function means(){const sx=[0,0,0],sy=[0,0,0],c=[0,0,0];
+    for(let i=0;i<pts.length;i++){const k=labels[i];sx[k]+=pts[i].x;sy[k]+=pts[i].y;c[k]++;}
+    const m=[];for(let k=0;k<K;k++)m.push(c[k]? {x:sx[k]/c[k],y:sy[k]/c[k]} : {x:centroids[k].x,y:centroids[k].y});return m;}
+  function setPhase(p){const el=$('miniPhase');if(el)el.textContent=phaseText[p]||'';}
+  function reset(){
+    const blobs=[[W*0.28,H*0.34],[W*0.72,H*0.30],[W*0.5,H*0.74]];
+    pts=[]; blobs.forEach(b=>{for(let i=0;i<16;i++)pts.push(gauss(b[0],b[1],W*0.085));});
+    centroids=[]; for(let k=0;k<K;k++)centroids.push({x:rand(W*0.15,W*0.85),y:rand(H*0.18,H*0.82)});
+    labels=new Array(pts.length).fill(0); step=0; phase='assign'; t0=performance.now(); assign();
+  }
+  function draw(){
+    const cols=themeCols();
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<pts.length;i++){ctx.beginPath();ctx.arc(pts[i].x,pts[i].y,5,0,7);ctx.fillStyle=cols[labels[i]];ctx.globalAlpha=.9;ctx.fill();ctx.globalAlpha=1;}
+    for(let k=0;k<K;k++){const c=centroids[k];
+      ctx.beginPath();ctx.arc(c.x,c.y,13,0,7);ctx.fillStyle=cols[k];ctx.globalAlpha=.16;ctx.fill();ctx.globalAlpha=1;
+      ctx.beginPath();ctx.arc(c.x,c.y,13,0,7);ctx.lineWidth=3.5;ctx.strokeStyle=cols[k];ctx.stroke();
+      ctx.beginPath();ctx.arc(c.x,c.y,3.5,0,7);ctx.fillStyle=cols[k];ctx.fill();}
+  }
+  function frame(now){
+    const dt=now-t0;
+    if(phase==='assign'){
+      setPhase('assign'); draw();
+      if(dt>800){moveFrom=centroids.map(c=>({x:c.x,y:c.y})); moveTo=means(); phase='move'; t0=now;}
+    }else if(phase==='move'){
+      setPhase('move');
+      const f=Math.min(1,dt/650), e=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2; // ease-in-out
+      for(let k=0;k<K;k++)centroids[k]={x:moveFrom[k].x+(moveTo[k].x-moveFrom[k].x)*e, y:moveFrom[k].y+(moveTo[k].y-moveFrom[k].y)*e};
+      draw();
+      if(f>=1){let mv=0;for(let k=0;k<K;k++){const dx=moveTo[k].x-moveFrom[k].x,dy=moveTo[k].y-moveFrom[k].y;mv+=dx*dx+dy*dy;}
+        step++; if(mv<1.5||step>=9){phase='rest';t0=now;setPhase('rest');} else {assign();phase='assign';t0=now;}}
+    }else{ draw(); if(dt>1600) reset(); }
+    raf=requestAnimationFrame(frame);
+  }
+  reset();
+  draw(); setPhase('assign');           // paint one frame right away — never blank
+  if(!reduced){
+    raf=requestAnimationFrame(frame);
+    // rAF pauses while the tab is hidden; make sure we resume when it returns
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden){cancelAnimationFrame(raf);t0=performance.now();raf=requestAnimationFrame(frame);}
+    });
+  }
+}
+
+/* ---------- boot ---------- */
+// Sync state to the slider's ACTUAL value — browsers restore form control
+// positions across reloads, so trust the control rather than a hardcoded default.
+state.K=+kSlider.value;
+$('kValue').innerHTML=state.K+'<span class="unit">colors</span>';
+kSlider.setAttribute('aria-valuenow',state.K);
+setKFill();
+buildSamples($('samplesEmpty'));
+updateReducedLabel();
+initMiniDemo();
+</script>
+</body>
+</html>
