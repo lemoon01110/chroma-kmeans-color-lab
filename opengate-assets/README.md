@@ -9,6 +9,8 @@ Also copied to: `~/Downloads/Opengate-W3D1-Two-Kinds-of-Model.pptx`
 - Open in **PowerPoint**, **Keynote**, or **File → Import** into Google Slides
 - Animated GIF on the hook slide plays in PowerPoint/Keynote; Google Slides sometimes freezes GIFs — re-upload `kmeans-dots-rings.gif` onto that slide if needed
 
+No floor / room props required — KNN check-in is paper at desks; Chroma Lab is on laptops.
+
 ## Flow (19 slides)
 
 1. Title — two kinds of model  
@@ -20,11 +22,11 @@ Also copied to: `~/Downloads/Opengate-W3D1-Two-Kinds-of-Model.pptx`
 7. AI ⊃ ML ⊃ DL  
 8. Supervised vs unsupervised fork  
 9. Call it out  
-10. Dots + distance (student & pixel→RGB)  
-11–13. KNN + floor activity  
+10. Dots + distance (graph + RGB)  
+11–13. KNN + paper check-in  
 14–16. K-Means steps + worked example  
 17. Live Chroma Lab URL  
-18. Partner work  
+18. Partner work (paper KNN or Chroma)  
 19. Wrap + exit ticket  
 
 ## Extra media
