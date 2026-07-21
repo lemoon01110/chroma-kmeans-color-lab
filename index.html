@@ -590,6 +590,14 @@ footer.foot a{color:var(--accent);text-decoration:none}
 }
 .algo-stage-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .algo-stage-title{font-size:13px;font-weight:600}
+.algo-mode{
+  display:inline-flex;gap:2px;padding:3px;border-radius:9px;border:1px solid var(--line);background:var(--surface);
+}
+.algo-mode button{
+  font:inherit;font-size:11px;font-weight:700;font-family:var(--font-mono);letter-spacing:.04em;
+  border:0;background:transparent;color:var(--ink-mute);padding:4px 10px;border-radius:6px;cursor:pointer;
+}
+.algo-mode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .algo-live{
   font-family:var(--font-mono);font-size:11.5px;letter-spacing:.03em;color:var(--accent);
   display:inline-flex;align-items:center;gap:7px;
@@ -675,7 +683,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <div class="algo-copy">
         <h2>The big idea (watch the movie →)</h2>
         <p class="lede">A photo is millions of tiny squares called <b>pixels</b>. Each pixel is stored as three dials from 0–255: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue light to mix. That RGB recipe is what the screen actually uses.</p>
-        <p class="lede">If you plot those three dials as a position in space, similar colors form clumps. K-Means plants <b>K</b> flags in that cloud, then loops: group every pixel to the closest flag, move each flag to its team’s middle, repeat until the flags stop. The catch: “closest” needs a <b>ruler</b> — RGB or LAB — and the ruler changes who sits next to whom.</p>
+        <p class="lede">Watch the movie: first a <b>flat 2-D cartoon</b>, then the same loop in <b>3-D RGB space</b> — each dial becomes an axis (R, G, B). Similar colors form clumps. K-Means plants <b>K</b> flags, then loops: join the closest flag, move each flag to its team’s middle, repeat. The catch: “closest” needs a <b>ruler</b> — RGB or LAB.</p>
         <div class="algo-steps" id="algoSteps">
           <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
           <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the flags stop moving">
@@ -689,13 +697,19 @@ footer.foot a{color:var(--accent);text-decoration:none}
       </div>
       <div class="algo-stage">
         <div class="algo-stage-head">
-          <span class="algo-stage-title">Cartoon version · 3 flags on a flat table</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="algo-stage-title" id="algoStageTitle">2-D cartoon · flat table</span>
+            <div class="algo-mode" role="group" aria-label="View mode">
+              <button type="button" id="algoMode2d" aria-pressed="true">2D</button>
+              <button type="button" id="algoMode3d" aria-pressed="false">3D</button>
+            </div>
+          </div>
           <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Spreading out a cloud of dots…</span></span>
         </div>
         <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: differently colored dots appear, random flags drop in, dots join the nearest flag, flags slide to the middle of their groups, then it starts over."></canvas>
+          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes."></canvas>
         </div>
-        <div class="algo-legend">
+        <div class="algo-legend" id="algoLegend">
           <span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
           <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
         </div>
@@ -1874,8 +1888,8 @@ function refreshSampleActive(){
 }
 
 /* =====================================================================
- *  LIVE 2-D DEMO (top-of-page algorithm sketch)
- *  Shows: random Guess → Assign → Update → Converge, looping forever.
+ *  LIVE DEMO (top-of-page algorithm sketch)
+ *  2-D cartoon cycle → lift into 3-D RGB → same Guess/Assign/Update loop.
  * ===================================================================== */
 function initAlgoDemo(){
   const cv=$('algoDemo'); if(!cv)return;
@@ -1884,28 +1898,36 @@ function initAlgoDemo(){
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   let pts=[], centroids=[], labels=[], visibleMeans=0;
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
+  let dim='2d'; // '2d' | '3d'
+  let rot=0.55, liftT=0, forceDim=null; // forceDim: user clicked 2D/3D
 
-  const phaseCopy={
-    seed:'First: a cloud of differently colored pixels…',
-    guess:'Guess — dropping random flags…',
+  const phaseCopy2d={
+    seed:'2-D: a cloud of differently colored pixels…',
+    guess:'Guess — dropping random flags on the flat table…',
     assign:'Assign — every colored dot joins the closest flag',
     update:'Update — each flag slides to its team’s middle',
-    converge:'Converge — flags stopped · starting a new Guess…'
+    converge:'Converge — next we’ll lift this into 3-D RGB…',
+    lift:'Lifting into 3-D — each color becomes a spot in RGB space…'
+  };
+  const phaseCopy3d={
+    seed:'3-D RGB: each dial is an axis (R · G · B)…',
+    guess:'Guess — planting flags inside the RGB cube…',
+    assign:'Assign — closest flag in 3-D (R, G, B distance)',
+    update:'Update — flags slide to their team’s RGB middle',
+    converge:'Converge — real photos do this in RGB (or LAB)…'
   };
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
-  const gauss=(mx,my,s)=>({
-    x:clampv(mx+(Math.random()+Math.random()+Math.random()-1.5)*s,18,W-18),
-    y:clampv(my+(Math.random()+Math.random()+Math.random()-1.5)*s,18,H-18)
-  });
-  // Soft jitter around a base hex so nearby pixels look related but not identical
-  function jitterHex(hex, amt=28){
+  const hexToRgb=hex=>{
     const n=parseInt(hex.slice(1),16);
-    const ch=c=>clampv((c&255)+((Math.random()*2-1)*amt)|0, 30, 245);
-    const r=ch(n>>16), g=ch(n>>8), b=ch(n);
-    return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+    return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+  };
+  const rgbToHex=(r,g,b)=>'#'+[r,g,b].map(v=>clampv(v|0,0,255).toString(16).padStart(2,'0')).join('');
+  function jitterHex(hex, amt=28){
+    const {r,g,b}=hexToRgb(hex);
+    const j=c=>clampv(c+((Math.random()*2-1)*amt)|0, 30, 245);
+    return rgbToHex(j(r), j(g), j(b));
   }
-
   function themeCols(){
     const cs=getComputedStyle(document.body);
     return [
@@ -1914,48 +1936,52 @@ function initAlgoDemo(){
       cs.getPropertyValue('--gold').trim()||'#b8860b'
     ];
   }
-  function lineCol(){
-    return getComputedStyle(document.body).getPropertyValue('--line').trim()||'#ddd6c6';
-  }
-  function surfaceCol(){
-    return getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fbf9f4';
+  function inkMute(){ return getComputedStyle(document.body).getPropertyValue('--ink-mute').trim()||'#9c968a'; }
+  function lineCol(){ return getComputedStyle(document.body).getPropertyValue('--line').trim()||'#ddd6c6'; }
+  function surfaceCol(){ return getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fbf9f4'; }
+  function inkCol(){ return getComputedStyle(document.body).getPropertyValue('--ink').trim()||'#ece7dc'; }
+
+  function project(r,g,b, angle){
+    // Map RGB 0–255 → unit cube, rotate, perspective-project to canvas
+    const x=(r/255)*2-1, y=(g/255)*2-1, z=(b/255)*2-1;
+    const xr=x*Math.cos(angle)+z*Math.sin(angle);
+    const zr=-x*Math.sin(angle)+z*Math.cos(angle);
+    const yr=y*0.92-zr*0.28;
+    const depth=2.65+zr*0.55;
+    const sc=148/depth;
+    return {sx:W*0.54+xr*sc*1.38, sy:H*0.56-yr*sc*1.18, depth:zr, sc};
   }
 
-  function assign(){
-    for(let i=0;i<pts.length;i++){
-      let b=0, bd=1e9;
-      for(let k=0;k<visibleMeans;k++){
-        const dx=pts[i].x-centroids[k].x, dy=pts[i].y-centroids[k].y, d=dx*dx+dy*dy;
-        if(d<bd){bd=d;b=k;}
-      }
-      labels[i]=b;
+  function syncChrome(){
+    const title=$('algoStageTitle');
+    if(title) title.textContent = dim==='2d'
+      ? '2-D cartoon · flat table'
+      : '3-D · real RGB color space (R, G, B)';
+    const b2=$('algoMode2d'), b3=$('algoMode3d');
+    if(b2) b2.setAttribute('aria-pressed', dim==='2d'?'true':'false');
+    if(b3) b3.setAttribute('aria-pressed', dim==='3d'?'true':'false');
+    const leg=$('algoLegend');
+    if(leg){
+      leg.innerHTML = dim==='2d'
+        ? `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
+           <span><span class="r"></span> ring = a flag</span>`
+        : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> position = that pixel’s R, G, B recipe</span>
+           <span><span class="r"></span> ring = a flag floating in the cube</span>`;
     }
-  }
-  function means(){
-    const sx=new Float64Array(K), sy=new Float64Array(K), c=new Uint32Array(K);
-    for(let i=0;i<pts.length;i++){
-      const k=labels[i]; sx[k]+=pts[i].x; sy[k]+=pts[i].y; c[k]++;
-    }
-    const m=[];
-    for(let k=0;k<K;k++){
-      m.push(c[k] ? {x:sx[k]/c[k], y:sy[k]/c[k]} : {x:centroids[k].x, y:centroids[k].y});
-    }
-    return m;
   }
 
   function setPhaseUI(p){
-    const el=$('algoPhase'); if(el) el.textContent=phaseCopy[p]||'';
+    const copy = (p==='lift' ? phaseCopy2d : (dim==='3d' ? phaseCopy3d : phaseCopy2d));
+    const el=$('algoPhase'); if(el) el.textContent=copy[p]||'';
     document.querySelectorAll('#algoSteps .algo-step').forEach(s=>{
       const ph=s.getAttribute('data-phase');
-      const map={seed:'guess', guess:'guess', assign:'assign', update:'update', converge:'converge'};
+      const map={seed:'guess', guess:'guess', assign:'assign', update:'update', converge:'converge', lift:'guess'};
       s.classList.toggle('active', map[p]===ph);
     });
     const loop=$('algoLoop');
     if(loop) loop.classList.toggle('active', p==='assign' || p==='update');
-    // Mirror onto the sticky vocab strip only before a photo is loaded —
-    // once the real clustering UI owns those pills, leave them alone.
     if(state.img) return;
-    const mapPill={seed:'phaseGuess', guess:'phaseGuess', assign:'phaseAssign', update:'phaseUpdate', converge:'phaseConverge'};
+    const mapPill={seed:'phaseGuess', guess:'phaseGuess', assign:'phaseAssign', update:'phaseUpdate', converge:'phaseConverge', lift:'phaseGuess'};
     ['phaseGuess','phaseAssign','phaseUpdate','phaseConverge'].forEach(id=>{
       const node=$(id); if(!node)return;
       node.classList.remove('active','done');
@@ -1970,151 +1996,329 @@ function initAlgoDemo(){
     });
   }
 
-  function resetCloud(){
-    const cols=themeCols();
-    // Three soft color clumps (like a photo’s sky / sand / leaf areas)
-    const blobs=[
-      [W*0.26, H*0.36, cols[0]],
-      [W*0.74, H*0.32, cols[1]],
-      [W*0.50, H*0.72, cols[2]],
-    ];
-    pts=[];
-    blobs.forEach(([bx,by,base])=>{
-      for(let i=0;i<22;i++){
-        const p=gauss(bx,by,W*0.09);
-        pts.push({x:p.x, y:p.y, col:jitterHex(base, 34)});
+  function assign(){
+    for(let i=0;i<pts.length;i++){
+      let best=0, bd=1e12;
+      for(let k=0;k<visibleMeans;k++){
+        let d;
+        if(dim==='3d'){
+          const dx=pts[i].r-centroids[k].r, dy=pts[i].g-centroids[k].g, dz=pts[i].b-centroids[k].b;
+          d=dx*dx+dy*dy+dz*dz;
+        }else{
+          const dx=pts[i].x-centroids[k].x, dy=pts[i].y-centroids[k].y;
+          d=dx*dx+dy*dy;
+        }
+        if(d<bd){bd=d;best=k;}
       }
-    });
-    // A few stray pixels (mixed colors) so the cloud isn’t perfectly tidy
-    const stray=['#c45c4a','#3d9a8f','#c9a227','#7b5ea7','#4a7ec7'];
-    for(let i=0;i<10;i++){
-      pts.push({x:rand(24,W-24), y:rand(24,H-24), col:jitterHex(stray[i%stray.length], 22)});
+      labels[i]=best;
+    }
+  }
+  function means(){
+    if(dim==='3d'){
+      const sr=new Float64Array(K), sg=new Float64Array(K), sb=new Float64Array(K), c=new Uint32Array(K);
+      for(let i=0;i<pts.length;i++){
+        const k=labels[i]; sr[k]+=pts[i].r; sg[k]+=pts[i].g; sb[k]+=pts[i].b; c[k]++;
+      }
+      const m=[];
+      for(let k=0;k<K;k++){
+        m.push(c[k]
+          ? {r:sr[k]/c[k], g:sg[k]/c[k], b:sb[k]/c[k], col:rgbToHex(sr[k]/c[k], sg[k]/c[k], sb[k]/c[k])}
+          : {...centroids[k]});
+      }
+      return m;
+    }
+    const sx=new Float64Array(K), sy=new Float64Array(K), c=new Uint32Array(K);
+    for(let i=0;i<pts.length;i++){
+      const k=labels[i]; sx[k]+=pts[i].x; sy[k]+=pts[i].y; c[k]++;
+    }
+    const m=[];
+    for(let k=0;k<K;k++){
+      m.push(c[k] ? {x:sx[k]/c[k], y:sy[k]/c[k]} : {x:centroids[k].x, y:centroids[k].y});
+    }
+    return m;
+  }
+
+  function resetCloud(nextDim){
+    dim = nextDim || forceDim || '2d';
+    const cols=themeCols();
+    pts=[]; labels=[]; centroids=[]; trails=[];
+    visibleMeans=0; step=0; liftT=0;
+    phase='seed'; t0=performance.now();
+
+    if(dim==='2d'){
+      const blobs=[[W*0.26,H*0.36,cols[0]],[W*0.74,H*0.32,cols[1]],[W*0.50,H*0.72,cols[2]]];
+      blobs.forEach(([bx,by,base])=>{
+        for(let i=0;i<22;i++){
+          const x=clampv(bx+(Math.random()+Math.random()+Math.random()-1.5)*W*0.09,18,W-18);
+          const y=clampv(by+(Math.random()+Math.random()+Math.random()-1.5)*W*0.09,18,H-18);
+          const col=jitterHex(base,34);
+          const rgb=hexToRgb(col);
+          pts.push({x,y, ...rgb, col, x0:x, y0:y});
+        }
+      });
+      const stray=['#c45c4a','#3d9a8f','#c9a227','#7b5ea7','#4a7ec7'];
+      for(let i=0;i<10;i++){
+        const col=jitterHex(stray[i%stray.length],22);
+        const rgb=hexToRgb(col);
+        const x=rand(24,W-24), y=rand(24,H-24);
+        pts.push({x,y, ...rgb, col, x0:x, y0:y});
+      }
+      for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
+    }else{
+      // Three RGB clumps (warm / teal / gold-ish) inside the cube
+      const blobs=[
+        [210,70,55],[55,160,150],[200,160,45]
+      ];
+      blobs.forEach(([br,bg,bb])=>{
+        for(let i=0;i<24;i++){
+          const r=clampv(br+(Math.random()*2-1)*38,20,245);
+          const g=clampv(bg+(Math.random()*2-1)*38,20,245);
+          const b=clampv(bb+(Math.random()*2-1)*38,20,245);
+          const col=rgbToHex(r,g,b);
+          const p2=project(r,g,b,rot);
+          pts.push({r,g,b,col, x:p2.sx, y:p2.sy, x0:p2.sx, y0:p2.sy});
+        }
+      });
+      for(let i=0;i<8;i++){
+        const r=rand(40,220), g=rand(40,220), b=rand(40,220);
+        const col=rgbToHex(r,g,b);
+        const p2=project(r,g,b,rot);
+        pts.push({r,g,b,col, x:p2.sx, y:p2.sy, x0:p2.sx, y0:p2.sy});
+      }
+      for(let k=0;k<K;k++){
+        const r=rand(40,220), g=rand(40,220), b=rand(40,220);
+        centroids.push({r,g,b, col:rgbToHex(r,g,b)});
+      }
     }
     labels=new Array(pts.length).fill(-1);
-    centroids=[];
-    for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
-    visibleMeans=0;
-    trails=[];
-    step=0;
-    phase='seed';
-    t0=performance.now();
+    syncChrome();
     setPhaseUI('seed');
   }
 
-  function drawLinks(cols){
-    if(visibleMeans===0) return;
-    ctx.save();
-    ctx.globalAlpha=0.12;
-    ctx.lineWidth=1;
-    for(let i=0;i<pts.length;i++){
-      const k=labels[i]; if(k<0 || k>=visibleMeans) continue;
-      ctx.strokeStyle=cols[k];
-      ctx.beginPath();
-      ctx.moveTo(pts[i].x, pts[i].y);
-      ctx.lineTo(centroids[k].x, centroids[k].y);
-      ctx.stroke();
-    }
-    ctx.restore();
+  function drawAxes3d(angle){
+    const origin={r:20,g:20,b:20};
+    const ends=[
+      [{r:245,g:20,b:20}, '#d34122', 'R'],
+      [{r:20,g:245,b:20}, '#1f9a4f', 'G'],
+      [{r:20,g:20,b:245}, '#2f7bd4', 'B'],
+    ];
+    const o=project(origin.r,origin.g,origin.b,angle);
+    ends.forEach(([e,col,lab])=>{
+      const p=project(e.r,e.g,e.b,angle);
+      ctx.strokeStyle=col; ctx.globalAlpha=0.55; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(o.sx,o.sy); ctx.lineTo(p.sx,p.sy); ctx.stroke();
+      ctx.globalAlpha=0.9; ctx.fillStyle=col;
+      ctx.font='700 12px ui-monospace,monospace';
+      ctx.fillText(lab, p.sx+4, p.sy+4);
+    });
+    ctx.globalAlpha=1;
   }
 
-  function drawTrails(cols){
-    for(const t of trails){
-      ctx.save();
-      ctx.globalAlpha=t.a;
-      ctx.strokeStyle=cols[t.k];
-      ctx.lineWidth=2;
+  function drawCubeHint(angle){
+    // faint cube wireframe corners
+    const corners=[];
+    for(const r of [25,230]) for(const g of [25,230]) for(const b of [25,230])
+      corners.push(project(r,g,b,angle));
+    ctx.strokeStyle=lineCol(); ctx.globalAlpha=0.28; ctx.lineWidth=1;
+    // draw a few edges of the AABB in projected space (approximate by connecting near pairs)
+    const edges=[[0,1],[0,2],[0,4],[7,3],[7,5],[7,6],[1,3],[1,5],[2,3],[2,6],[4,5],[4,6]];
+    edges.forEach(([a,b])=>{
       ctx.beginPath();
-      ctx.moveTo(t.x0,t.y0);
-      ctx.lineTo(t.x1,t.y1);
+      ctx.moveTo(corners[a].sx, corners[a].sy);
+      ctx.lineTo(corners[b].sx, corners[b].sy);
       ctx.stroke();
-      ctx.restore();
-      t.a*=0.92;
+    });
+    ctx.globalAlpha=1;
+  }
+
+  function screenPos(pt, angle, lift){
+    if(dim==='2d' && phase!=='lift') return {sx:pt.x, sy:pt.y, depth:0, sc:1};
+    const p3=project(pt.r, pt.g, pt.b, angle);
+    if(phase==='lift'){
+      const t=lift;
+      return {
+        sx:pt.x0+(p3.sx-pt.x0)*t,
+        sy:pt.y0+(p3.sy-pt.y0)*t,
+        depth:p3.depth*t,
+        sc:1+(p3.sc/148-1)*t
+      };
     }
-    trails=trails.filter(t=>t.a>0.04);
+    return p3;
+  }
+
+  function centroidScreen(c, angle){
+    if(dim==='3d' || phase==='lift'){
+      if(c.r!=null) return project(c.r,c.g,c.b,angle);
+      // during lift from 2d: invent RGB from theme later — 2d centroids only have x,y
+      return {sx:c.x, sy:c.y, depth:0, sc:1};
+    }
+    return {sx:c.x, sy:c.y, depth:0, sc:1};
   }
 
   function draw(){
     const cols=themeCols();
+    const angle=rot;
     ctx.fillStyle=surfaceCol();
     ctx.fillRect(0,0,W,H);
 
-    // soft grid
-    ctx.strokeStyle=lineCol();
-    ctx.globalAlpha=0.45;
-    ctx.lineWidth=1;
-    for(let x=40;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=40;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    ctx.globalAlpha=1;
+    if(dim==='2d' && phase!=='lift'){
+      ctx.strokeStyle=lineCol();
+      ctx.globalAlpha=0.45; ctx.lineWidth=1;
+      for(let x=40;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=40;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      ctx.globalAlpha=1;
+    }else{
+      drawCubeHint(angle);
+      drawAxes3d(angle);
+    }
 
-    if(phase==='assign' || phase==='update') drawLinks(cols);
-    drawTrails(cols);
+    // links
+    if((phase==='assign'||phase==='update') && visibleMeans>0){
+      ctx.save();
+      ctx.globalAlpha=0.14; ctx.lineWidth=1;
+      for(let i=0;i<pts.length;i++){
+        const k=labels[i]; if(k<0||k>=visibleMeans) continue;
+        const a=screenPos(pts[i],angle,liftT);
+        const b=centroidScreen(centroids[k],angle);
+        ctx.strokeStyle=cols[k];
+        ctx.beginPath(); ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy); ctx.stroke();
+      }
+      ctx.restore();
+    }
 
-    // points keep their own pixel colors (they’re different!); team = stroke after Assign
-    for(let i=0;i<pts.length;i++){
-      const k=labels[i];
-      const assigned = k>=0 && visibleMeans>0;
+    // trails
+    for(const t of trails){
+      ctx.save();
+      ctx.globalAlpha=t.a; ctx.strokeStyle=cols[t.k]; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(t.x0,t.y0); ctx.lineTo(t.x1,t.y1); ctx.stroke();
+      ctx.restore();
+      t.a*=0.92;
+    }
+    trails=trails.filter(t=>t.a>0.04);
+
+    // depth-sort points in 3d
+    const order=pts.map((p,i)=>({i, ...screenPos(p,angle,liftT)}));
+    order.sort((a,b)=>a.depth-b.depth);
+
+    for(const o of order){
+      const p=pts[o.i];
+      const k=labels[o.i];
+      const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
+      const rad=(assigned?5.6:5.0)*(dim==='3d'?clampv(0.75+o.sc*0.35,0.85,1.35):1);
       ctx.beginPath();
-      ctx.arc(pts[i].x, pts[i].y, assigned ? 5.6 : 5.2, 0, 7);
-      ctx.fillStyle=pts[i].col || cols[0];
-      ctx.globalAlpha=assigned ? 0.95 : 0.88;
+      ctx.arc(o.sx, o.sy, rad, 0, 7);
+      ctx.fillStyle=p.col;
+      ctx.globalAlpha=0.92;
       ctx.fill();
       if(assigned){
-        ctx.lineWidth=2;
-        ctx.strokeStyle=cols[k];
-        ctx.globalAlpha=0.95;
-        ctx.stroke();
+        ctx.lineWidth=2; ctx.strokeStyle=cols[k]; ctx.stroke();
       }
       ctx.globalAlpha=1;
     }
 
-    // means (rings)
+    // means
     for(let k=0;k<visibleMeans;k++){
       const c=centroids[k];
-      // pop scale during guess
+      const s=centroidScreen(c,angle);
       let scale=1;
       if(phase==='guess' && k===visibleMeans-1){
         const age=(performance.now()-t0)/380;
-        scale = age<1 ? 0.35+0.65*Math.min(1,age) : 1;
+        scale=age<1?0.35+0.65*Math.min(1,age):1;
       }
-      const R=14*scale;
-      ctx.beginPath(); ctx.arc(c.x,c.y,R+6,0,7);
-      ctx.fillStyle=cols[k]; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
-      ctx.beginPath(); ctx.arc(c.x,c.y,R,0,7);
-      ctx.lineWidth=3.5; ctx.strokeStyle=cols[k]; ctx.stroke();
-      ctx.beginPath(); ctx.arc(c.x,c.y,3.8,0,7);
-      ctx.fillStyle=cols[k]; ctx.fill();
-      // label
+      const R=14*scale*(dim==='3d'?clampv(0.8+s.sc*0.3,0.85,1.25):1);
+      const ringCol = (dim==='3d' && c.col) ? c.col : cols[k];
+      ctx.beginPath(); ctx.arc(s.sx,s.sy,R+6,0,7);
+      ctx.fillStyle=ringCol; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
+      ctx.beginPath(); ctx.arc(s.sx,s.sy,R,0,7);
+      ctx.lineWidth=3.5; ctx.strokeStyle=ringCol; ctx.stroke();
+      ctx.beginPath(); ctx.arc(s.sx,s.sy,3.8,0,7);
+      ctx.fillStyle=ringCol; ctx.fill();
       ctx.font='700 11px ui-monospace,monospace';
-      ctx.fillStyle=cols[k];
-      ctx.fillText('μ'+(k+1), c.x+R+4, c.y-R+2);
+      ctx.fillStyle=ringCol;
+      ctx.fillText('μ'+(k+1), s.sx+R+4, s.sy-R+2);
+    }
+
+    if(dim==='3d' || phase==='lift'){
+      ctx.fillStyle=inkMute();
+      ctx.font='600 11px ui-monospace,monospace';
+      ctx.globalAlpha=0.75;
+      ctx.fillText('RGB cube', 14, H-14);
+      ctx.globalAlpha=1;
     }
   }
 
+  function beginLift(){
+    // stash 2d screen positions; keep each point’s RGB from its color
+    pts.forEach(p=>{ p.x0=p.x; p.y0=p.y; });
+    // seed 3d centroids from current 2d means’ average pixel colors per cluster
+    const sr=new Float64Array(K), sg=new Float64Array(K), sb=new Float64Array(K), c=new Uint32Array(K);
+    for(let i=0;i<pts.length;i++){
+      const k=Math.max(0, labels[i]);
+      sr[k]+=pts[i].r; sg[k]+=pts[i].g; sb[k]+=pts[i].b; c[k]++;
+    }
+    centroids=[];
+    for(let k=0;k<K;k++){
+      if(c[k]){
+        const r=sr[k]/c[k], g=sg[k]/c[k], b=sb[k]/c[k];
+        centroids.push({r,g,b,col:rgbToHex(r,g,b)});
+      }else{
+        const col=themeCols()[k];
+        const rgb=hexToRgb(col);
+        centroids.push({...rgb, col});
+      }
+    }
+    visibleMeans=K;
+    liftT=0;
+    phase='lift';
+    t0=performance.now();
+    setPhaseUI('lift');
+  }
+
+  function enter3dAfterLift(){
+    dim='3d';
+    forceDim=null;
+    syncChrome();
+    // re-randomize flags for a fresh Guess in 3-D so students see the loop again
+    centroids=[];
+    for(let k=0;k<K;k++){
+      const r=rand(40,220), g=rand(40,220), b=rand(40,220);
+      centroids.push({r,g,b,col:rgbToHex(r,g,b)});
+    }
+    labels=new Array(pts.length).fill(-1);
+    visibleMeans=0; step=0; trails=[];
+    phase='guess'; t0=performance.now();
+    setPhaseUI('guess');
+  }
+
   function frame(now){
+    if(dim==='3d' || phase==='lift') rot += 0.0042;
     const dt=now-t0;
-    if(phase==='seed'){
+
+    if(phase==='lift'){
+      liftT=Math.min(1, dt/1400);
+      const e=liftT<.5 ? 2*liftT*liftT : 1-Math.pow(-2*liftT+2,2)/2;
+      liftT=e;
+      setPhaseUI('lift'); draw();
+      if(dt>1500) enter3dAfterLift();
+    }else if(phase==='seed'){
       setPhaseUI('seed'); draw();
-      if(dt>900){ phase='guess'; t0=now; setPhaseUI('guess'); }
+      if(dt>850){ phase='guess'; t0=now; setPhaseUI('guess'); }
     }else if(phase==='guess'){
       setPhaseUI('guess');
-      // drop one marker every ~420ms
-      const need = Math.min(K, 1 + Math.floor(dt/420));
-      if(need > visibleMeans){
-        visibleMeans=need;
-        // tiny flash trail from nowhere — just a pop
-      }
+      const need=Math.min(K, 1+Math.floor(dt/420));
+      if(need>visibleMeans) visibleMeans=need;
       draw();
       if(visibleMeans>=K && dt>420*K+350){
-        assign();
-        phase='assign'; t0=now; setPhaseUI('assign');
+        assign(); phase='assign'; t0=now; setPhaseUI('assign');
       }
     }else if(phase==='assign'){
       setPhaseUI('assign'); draw();
-      if(dt>950){
-        moveFrom=centroids.map(c=>({x:c.x,y:c.y}));
+      if(dt>900){
+        moveFrom=centroids.map(c=>({...c}));
         moveTo=means();
         for(let k=0;k<K;k++){
-          trails.push({k, x0:moveFrom[k].x, y0:moveFrom[k].y, x1:moveTo[k].x, y1:moveTo[k].y, a:0.55});
+          const a=centroidScreen(moveFrom[k],rot), b=centroidScreen(moveTo[k],rot);
+          trails.push({k, x0:a.sx, y0:a.sy, x1:b.sx, y1:b.sy, a:0.55});
         }
         phase='update'; t0=now; setPhaseUI('update');
       }
@@ -2123,37 +2327,75 @@ function initAlgoDemo(){
       const f=Math.min(1, dt/700);
       const e=f<.5 ? 2*f*f : 1-Math.pow(-2*f+2,2)/2;
       for(let k=0;k<K;k++){
-        centroids[k]={
-          x:moveFrom[k].x+(moveTo[k].x-moveFrom[k].x)*e,
-          y:moveFrom[k].y+(moveTo[k].y-moveFrom[k].y)*e
-        };
+        if(dim==='3d'){
+          centroids[k]={
+            r:moveFrom[k].r+(moveTo[k].r-moveFrom[k].r)*e,
+            g:moveFrom[k].g+(moveTo[k].g-moveFrom[k].g)*e,
+            b:moveFrom[k].b+(moveTo[k].b-moveFrom[k].b)*e,
+          };
+          centroids[k].col=rgbToHex(centroids[k].r, centroids[k].g, centroids[k].b);
+        }else{
+          centroids[k]={
+            x:moveFrom[k].x+(moveTo[k].x-moveFrom[k].x)*e,
+            y:moveFrom[k].y+(moveTo[k].y-moveFrom[k].y)*e
+          };
+        }
       }
       draw();
       if(f>=1){
         let mv=0;
         for(let k=0;k<K;k++){
-          const dx=moveTo[k].x-moveFrom[k].x, dy=moveTo[k].y-moveFrom[k].y;
-          mv+=dx*dx+dy*dy;
+          if(dim==='3d'){
+            const dr=moveTo[k].r-moveFrom[k].r, dg=moveTo[k].g-moveFrom[k].g, db=moveTo[k].b-moveFrom[k].b;
+            mv+=dr*dr+dg*dg+db*db;
+          }else{
+            const dx=moveTo[k].x-moveFrom[k].x, dy=moveTo[k].y-moveFrom[k].y;
+            mv+=dx*dx+dy*dy;
+          }
         }
         step++;
-        if(mv<2.2 || step>=8){
+        const done = dim==='3d' ? (mv<40 || step>=7) : (mv<2.2 || step>=8);
+        if(done){
           phase='converge'; t0=now; setPhaseUI('converge');
         }else{
-          assign();
-          phase='assign'; t0=now; setPhaseUI('assign');
+          assign(); phase='assign'; t0=now; setPhaseUI('assign');
         }
       }
     }else{ // converge
       setPhaseUI('converge'); draw();
-      if(dt>1700) resetCloud();
+      if(dt>1600){
+        if(forceDim){
+          resetCloud(forceDim);
+        }else if(dim==='2d'){
+          beginLift();
+        }else{
+          resetCloud('2d');
+        }
+      }
     }
     raf=requestAnimationFrame(frame);
   }
 
-  resetCloud();
+  function jumpTo(d){
+    forceDim=d;
+    cancelAnimationFrame(raf);
+    resetCloud(d);
+    if(reduced){
+      visibleMeans=K; assign();
+      const m=means(); for(let k=0;k<K;k++) centroids[k]=m[k];
+      phase='converge'; setPhaseUI('converge'); draw();
+      return;
+    }
+    t0=performance.now();
+    raf=requestAnimationFrame(frame);
+  }
+
+  $('algoMode2d')?.addEventListener('click', ()=>jumpTo('2d'));
+  $('algoMode3d')?.addEventListener('click', ()=>jumpTo('3d'));
+
+  resetCloud('2d');
   draw();
   if(reduced){
-    // static converged-looking frame for reduced motion
     visibleMeans=K; assign();
     const m=means(); for(let k=0;k<K;k++) centroids[k]=m[k];
     phase='converge'; setPhaseUI('converge'); draw();
