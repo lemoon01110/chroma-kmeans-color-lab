@@ -674,13 +674,13 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <p class="lede">If you plot those three dials as a position in space, similar colors form clumps. K-Means plants <b>K</b> flags in that cloud, then loops: group every pixel to the closest flag, move each flag to its team’s middle, repeat until the flags stop. The catch: “closest” needs a <b>ruler</b> — RGB or LAB — and the ruler changes who sits next to whom.</p>
         <div class="algo-steps" id="algoSteps">
           <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
-          <div class="algo-loop" id="algoLoop" aria-label="Repeat group and move until the flags stop moving">
+          <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the flags stop moving">
             <span class="algo-loop-label">repeat this loop</span>
-            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Group.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
-            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Move.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
             <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
           </div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Done.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
         </div>
       </div>
       <div class="algo-stage">
@@ -796,11 +796,11 @@ footer.foot a{color:var(--accent);text-decoration:none}
     <div class="vocab-phase" aria-live="polite">
       <span class="phase-pill" id="phaseGuess">Guess</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseAssign">Group</span>
+      <span class="phase-pill" id="phaseAssign">Assign</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseUpdate">Move</span>
+      <span class="phase-pill" id="phaseUpdate">Update</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseConverge">Done</span>
+      <span class="phase-pill" id="phaseConverge">Converge</span>
     </div>
   </div>
 
@@ -956,9 +956,9 @@ footer.foot a{color:var(--accent);text-decoration:none}
               <div>
                 <div class="steps">
                   <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Put K flags down in the chosen space (RGB numbers, or LAB remixes).</p></div>
-                  <div class="step"><span class="n">2</span><p><strong>Group.</strong> For each pixel, find the closest flag with that same ruler.</p></div>
-                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Put each flag at the average of its team (average RGB or average LAB, matching the ruler).</p></div>
-                  <div class="step"><span class="n">4</span><p><strong>Done.</strong> Repeat until flags almost stop. Convert centers to RGB and repaint.</p></div>
+                  <div class="step"><span class="n">2</span><p><strong>Assign.</strong> For each pixel, find the closest flag with that same ruler.</p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Update.</strong> Put each flag at the average of its team (average RGB or average LAB, matching the ruler).</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Converge.</strong> Repeat until flags almost stop. Convert centers to RGB and repaint.</p></div>
                 </div>
                 <div class="callout">
                   Nobody labeled “sky” or “leaf.” The computer only followed a closeness rule in RGB or LAB. Grown-ups call that <strong>unsupervised learning</strong>. Change the ruler and you can get a different “discovered” palette from the same photo.
@@ -998,13 +998,13 @@ footer.foot a{color:var(--accent);text-decoration:none}
         </div>
         <div class="card-pad learn">
           <div class="phase-rail" aria-hidden="true">
-            <span class="phase-pill" id="learnPhaseAssign">Group</span>
+            <span class="phase-pill" id="learnPhaseAssign">Assign</span>
             <span class="phase-arrow">→</span>
-            <span class="phase-pill" id="learnPhaseUpdate">Move</span>
+            <span class="phase-pill" id="learnPhaseUpdate">Update</span>
             <span class="phase-arrow">→</span>
-            <span class="phase-pill" id="learnPhaseConverge">Done</span>
+            <span class="phase-pill" id="learnPhaseConverge">Converge</span>
           </div>
-          <p class="control-desc" style="margin-bottom:2px">We saved every Group → Move step. “Closest flag” used the <span id="learnRuler">RGB</span> ruler. Press <b>Play</b> to watch teams form, then flags slide. The picture is always drawn in RGB at the end.</p>
+          <p class="control-desc" style="margin-bottom:2px">We saved every Assign → Update step. “Closest flag” used the <span id="learnRuler">RGB</span> ruler. Press <b>Play</b> to watch teams form, then flags slide. The picture is always drawn in RGB at the end.</p>
           <div class="learn-status">
             <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
             <span class="control-desc" id="phaseCaption" style="margin:0">idle</span>
@@ -1884,9 +1884,9 @@ function initAlgoDemo(){
   const phaseCopy={
     seed:'First we make a cloud of dots…',
     guess:'Guess — dropping random flags…',
-    assign:'Group — every dot joins the closest flag',
-    update:'Move — each flag slides to its team’s middle',
-    converge:'Done — flags stopped · starting a new Guess…'
+    assign:'Assign — every dot joins the closest flag',
+    update:'Update — each flag slides to its team’s middle',
+    converge:'Converge — flags stopped · starting a new Guess…'
   };
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
@@ -2181,7 +2181,7 @@ const MISSIONS=[
     n:'∞',
     tab:'Free play',
     title:'Your turn',
-    goal:'Drop any photo. Remember: every pixel is an RGB recipe; RGB/LAB only chooses the ruler for Group/Move. Change K, flip the ruler, press Play, then save the RGB palette if you want.',
+    goal:'Drop any photo. Remember: every pixel is an RGB recipe; RGB/LAB only chooses the ruler for Assign/Update. Change K, flip the ruler, press Play, then save the RGB palette if you want.',
     tip:'Change one knob at a time — K, or RGB↔LAB — so you can see which change moved the teams.',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
     chips:[['mode','sandbox'],['pixels','always RGB'],['ruler','your pick']]
@@ -2227,7 +2227,7 @@ function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
   }else if(converged && atEnd && !playing){
     set('phaseGuess','done'); set('phaseAssign','done'); set('phaseUpdate','done'); set('phaseConverge','active');
     set('learnPhaseAssign','done'); set('learnPhaseUpdate','done'); set('learnPhaseConverge','active');
-    caption='Done — flags stopped moving; colors are final';
+    caption='Converge — flags stopped moving; colors are final';
   }else if(playing){
     const assignBeat = (frame % 2) === 0;
     set('phaseGuess','done');
@@ -2235,11 +2235,11 @@ function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
     set('phaseUpdate', assignBeat?'done':'active');
     set('learnPhaseAssign', assignBeat?'active':'');
     set('learnPhaseUpdate', assignBeat?'':'active');
-    caption = assignBeat ? 'Group — dots join the closest flag' : 'Move — flags slide to the middle of their teams';
+    caption = assignBeat ? 'Assign — dots join the closest flag' : 'Update — flags slide to the middle of their teams';
   }else if(frame===0){
     set('phaseGuess','active'); set('phaseAssign','active');
     set('learnPhaseAssign','active');
-    caption='Round 1 — first grouping after the random Guess';
+    caption='Round 1 — first Assign after the random Guess';
   }else{
     set('phaseGuess','done'); set('phaseAssign','active'); set('phaseUpdate','done');
     set('learnPhaseAssign','active'); set('learnPhaseUpdate','done');
