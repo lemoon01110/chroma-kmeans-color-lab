@@ -1,40 +1,29 @@
 # Opengate Week 3 Day 1 — slides & assets
 
-## The slide deck (use this)
+## The slide deck
 
 **`Opengate-W3D1-Two-Kinds-of-Model.pptx`**
 
-Also copied to: `~/Downloads/Opengate-W3D1-Two-Kinds-of-Model.pptx`
+Also in `~/Downloads/` (PPTX + PDF).
 
-- Open in **PowerPoint**, **Keynote**, or **File → Import** into Google Slides
-- Animated GIF on the hook slide plays in PowerPoint/Keynote; Google Slides sometimes freezes GIFs — re-upload `kmeans-dots-rings.gif` onto that slide if needed
+**This is an online middle-school activity.** Every student works on a laptop/Chromebook in the browser. No floor games, no room props.
 
-No floor / room props required — KNN check-in is paper at desks; Chroma Lab is on laptops.
+Live lab (put in chat / screen-share):  
+https://lemoon01110.github.io/chroma-kmeans-color-lab/
 
-## Flow (19 slides)
+## Flow (18 slides)
 
-1. Title — two kinds of model  
-2. Week map  
-3. Hook — colors with no labels (animation)  
-4. Bridge — learned structure without answers  
-5. What is a model?  
-6. Write this down  
-7. AI ⊃ ML ⊃ DL  
-8. Supervised vs unsupervised fork  
-9. Call it out  
-10. Dots + distance (graph + RGB)  
-11–13. KNN + paper check-in  
-14–16. K-Means steps + worked example  
-17. Live Chroma Lab URL  
-18. Partner work (paper KNN or Chroma)  
-19. Wrap + exit ticket  
+1. Title — online class framing  
+2. How to join — open the link  
+3. Week map  
+4. Hook animation  
+5–8. Model idea + ML nest  
+9–10. Supervised vs unsupervised  
+11. Dots + distance  
+12. KNN (quick idea only)  
+13–15. K-Means → tiny example  
+16. **Do this now** — open Chroma Lab  
+17. Partner missions in the lab  
+18. Wrap + exit ticket in chat  
 
-## Extra media
-
-| File | Notes |
-| --- | --- |
-| `kmeans-dots-rings.gif` | Hook animation (dots + rings) |
-| `kmeans-loop.gif` | Same with stage chrome |
-| `slide3-still.png` | Fallback still |
-
-Live lab: https://lemoon01110.github.io/chroma-kmeans-color-lab/
+GIF tip: Google Slides may freeze `kmeans-dots-rings.gif` — re-upload if needed.
