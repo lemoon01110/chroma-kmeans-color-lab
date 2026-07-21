@@ -602,7 +602,11 @@ footer.foot a{color:var(--accent);text-decoration:none}
 .algo-canvas-wrap canvas{display:block;width:100%;height:100%}
 .algo-legend{display:flex;gap:14px;font-size:12px;color:var(--ink-mute);flex-wrap:wrap}
 .algo-legend span{display:inline-flex;align-items:center;gap:6px}
-.algo-legend .d{width:9px;height:9px;border-radius:50%;background:var(--ink-mute)}
+.algo-legend .dots{display:inline-flex;gap:3px;align-items:center}
+.algo-legend .d{width:9px;height:9px;border-radius:50%}
+.algo-legend .d.d1{background:var(--accent)}
+.algo-legend .d.d2{background:var(--cyan)}
+.algo-legend .d.d3{background:var(--gold)}
 .algo-legend .r{width:13px;height:13px;border-radius:50%;border:3px solid var(--accent);box-sizing:border-box}
 
 .vocab{
@@ -689,10 +693,10 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Spreading out a cloud of dots…</span></span>
         </div>
         <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: dots appear, random flags drop in, dots join the nearest flag, flags slide to the middle of their groups, then it starts over."></canvas>
+          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: differently colored dots appear, random flags drop in, dots join the nearest flag, flags slide to the middle of their groups, then it starts over."></canvas>
         </div>
         <div class="algo-legend">
-          <span><span class="d"></span> small dot = one pixel</span>
+          <span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
           <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
         </div>
       </div>
@@ -1882,9 +1886,9 @@ function initAlgoDemo(){
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
 
   const phaseCopy={
-    seed:'First we make a cloud of dots…',
+    seed:'First: a cloud of differently colored pixels…',
     guess:'Guess — dropping random flags…',
-    assign:'Assign — every dot joins the closest flag',
+    assign:'Assign — every colored dot joins the closest flag',
     update:'Update — each flag slides to its team’s middle',
     converge:'Converge — flags stopped · starting a new Guess…'
   };
@@ -1894,6 +1898,13 @@ function initAlgoDemo(){
     x:clampv(mx+(Math.random()+Math.random()+Math.random()-1.5)*s,18,W-18),
     y:clampv(my+(Math.random()+Math.random()+Math.random()-1.5)*s,18,H-18)
   });
+  // Soft jitter around a base hex so nearby pixels look related but not identical
+  function jitterHex(hex, amt=28){
+    const n=parseInt(hex.slice(1),16);
+    const ch=c=>clampv((c&255)+((Math.random()*2-1)*amt)|0, 30, 245);
+    const r=ch(n>>16), g=ch(n>>8), b=ch(n);
+    return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
 
   function themeCols(){
     const cs=getComputedStyle(document.body);
@@ -1902,9 +1913,6 @@ function initAlgoDemo(){
       cs.getPropertyValue('--cyan').trim()||'#1f7a75',
       cs.getPropertyValue('--gold').trim()||'#b8860b'
     ];
-  }
-  function muteCol(){
-    return getComputedStyle(document.body).getPropertyValue('--ink-mute').trim()||'#9c968a';
   }
   function lineCol(){
     return getComputedStyle(document.body).getPropertyValue('--line').trim()||'#ddd6c6';
@@ -1963,11 +1971,25 @@ function initAlgoDemo(){
   }
 
   function resetCloud(){
-    const blobs=[[W*0.26,H*0.36],[W*0.74,H*0.32],[W*0.50,H*0.72]];
+    const cols=themeCols();
+    // Three soft color clumps (like a photo’s sky / sand / leaf areas)
+    const blobs=[
+      [W*0.26, H*0.36, cols[0]],
+      [W*0.74, H*0.32, cols[1]],
+      [W*0.50, H*0.72, cols[2]],
+    ];
     pts=[];
-    blobs.forEach(b=>{ for(let i=0;i<22;i++) pts.push(gauss(b[0],b[1],W*0.09)); });
-    // shuffle a little so it doesn't look too tidy
-    for(let i=0;i<10;i++) pts.push({x:rand(24,W-24), y:rand(24,H-24)});
+    blobs.forEach(([bx,by,base])=>{
+      for(let i=0;i<22;i++){
+        const p=gauss(bx,by,W*0.09);
+        pts.push({x:p.x, y:p.y, col:jitterHex(base, 34)});
+      }
+    });
+    // A few stray pixels (mixed colors) so the cloud isn’t perfectly tidy
+    const stray=['#c45c4a','#3d9a8f','#c9a227','#7b5ea7','#4a7ec7'];
+    for(let i=0;i<10;i++){
+      pts.push({x:rand(24,W-24), y:rand(24,H-24), col:jitterHex(stray[i%stray.length], 22)});
+    }
     labels=new Array(pts.length).fill(-1);
     centroids=[];
     for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
@@ -2013,7 +2035,6 @@ function initAlgoDemo(){
 
   function draw(){
     const cols=themeCols();
-    const mute=muteCol();
     ctx.fillStyle=surfaceCol();
     ctx.fillRect(0,0,W,H);
 
@@ -2028,19 +2049,21 @@ function initAlgoDemo(){
     if(phase==='assign' || phase==='update') drawLinks(cols);
     drawTrails(cols);
 
-    // points
+    // points keep their own pixel colors (they’re different!); team = stroke after Assign
     for(let i=0;i<pts.length;i++){
       const k=labels[i];
+      const assigned = k>=0 && visibleMeans>0;
       ctx.beginPath();
-      ctx.arc(pts[i].x, pts[i].y, 5.2, 0, 7);
-      if(k<0 || visibleMeans===0){
-        ctx.fillStyle=mute;
-        ctx.globalAlpha=0.55;
-      }else{
-        ctx.fillStyle=cols[k];
-        ctx.globalAlpha=0.92;
-      }
+      ctx.arc(pts[i].x, pts[i].y, assigned ? 5.6 : 5.2, 0, 7);
+      ctx.fillStyle=pts[i].col || cols[0];
+      ctx.globalAlpha=assigned ? 0.95 : 0.88;
       ctx.fill();
+      if(assigned){
+        ctx.lineWidth=2;
+        ctx.strokeStyle=cols[k];
+        ctx.globalAlpha=0.95;
+        ctx.stroke();
+      }
       ctx.globalAlpha=1;
     }
 
