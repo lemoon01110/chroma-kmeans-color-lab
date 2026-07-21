@@ -124,7 +124,7 @@ header.masthead{
   font-size:clamp(34px,5.4vw,62px);letter-spacing:-.02em;
 }
 .brand h1 em{font-style:italic;color:var(--accent)}
-.tagline{color:var(--ink-mute);font-size:clamp(13px,1.5vw,15px);max-width:46ch;margin-top:6px}
+.tagline{color:var(--ink-mute);font-size:clamp(13px,1.5vw,15px);max-width:58ch;margin-top:6px}
 .masthead-right{display:flex;align-items:center;gap:10px}
 
 .privacy-pill{
@@ -284,7 +284,7 @@ header.masthead{
 .k-label-wrap{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
 .k-label{font-size:15px;font-weight:600}
 .control-desc{font-size:12.5px;color:var(--ink-mute);line-height:1.4}
-.k-desc{max-width:24ch}
+.k-desc{max-width:34ch}
 /* align-items:center on the row (NOT baseline) keeps the big number inside padding */
 .k-value{
   font-family:var(--font-mono);font-weight:700;line-height:1;
@@ -511,7 +511,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
 .algo-copy{padding:var(--pad);display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--line)}
 @media(max-width:860px){.algo-copy{border-right:0;border-bottom:1px solid var(--line)}}
 .algo-copy h2{font-family:var(--font-display);font-size:clamp(22px,2.6vw,28px);font-weight:600;letter-spacing:-.02em;line-height:1.15}
-.algo-copy .lede{font-size:14.5px;color:var(--ink-mute);line-height:1.55;max-width:46ch}
+.algo-copy .lede{font-size:14.5px;color:var(--ink-mute);line-height:1.55;max-width:52ch}
+.algo-copy .lede + .lede{margin-top:-6px}
 .algo-steps{display:grid;gap:8px;margin-top:2px}
 .algo-step{
   display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;
@@ -555,9 +556,11 @@ footer.foot a{color:var(--accent);text-decoration:none}
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
 }
-.vocab-terms{display:flex;flex-wrap:wrap;gap:14px 18px;font-size:12.5px;color:var(--ink-mute)}
-.vocab-terms b{color:var(--ink);font-weight:600}
-.vocab-terms .eq{opacity:.45;margin:0 4px}
+.vocab-terms{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:12.5px;color:var(--ink-mute);align-items:flex-start}
+.vocab-terms .vt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.vocab-terms .vt b{color:var(--ink);font-weight:600}
+.vocab-terms .vt .eq{opacity:.45;margin:0 4px}
+.vocab-terms .vt .why{font-size:11px;line-height:1.35;max-width:22ch;opacity:.9}
 .vocab-phase{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .phase-pill{
   font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
@@ -594,7 +597,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
     <div class="brand">
       <span class="eyebrow">Unsupervised Learning · Lab</span>
       <h1>Chroma <em>Lab</em></h1>
-      <p class="tagline">K-Means drops a few random color markers into a cloud of pixels, then keeps moving them until the groups stop changing.</p>
+      <p class="tagline">A photo is a cloud of pixels in color space. K-Means plants a few random markers in that cloud, then repeatedly pulls them toward the centers of nearby pixels until the groups stop changing — those markers become the palette.</p>
     </div>
     <div class="masthead-right">
       <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
@@ -609,26 +612,27 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <section class="card algo reveal" id="algoIntro" style="animation-delay:.02s">
     <div class="algo-grid">
       <div class="algo-copy">
-        <h2>How the algorithm moves</h2>
-        <p class="lede">Every pixel is a point in color space. K-Means picks <b>K random starting markers</b> (the means), then iterates: color each point by its nearest marker, slide each marker to the average of its group, repeat until nothing budges.</p>
+        <h2>What K-Means is doing</h2>
+        <p class="lede">Think of every pixel as a <b>point</b> with three coordinates (red, green, blue). A whole photo is a messy cloud of millions of those points. Clustering means: find <b>K</b> representative spots in the cloud so every point has a nearby “home.”</p>
+        <p class="lede">The algorithm does <b>not</b> know which colors matter. It starts with a <b>random guess</b> for where those homes should be, then improves the guess with a simple loop you can watch on the right.</p>
         <div class="algo-steps" id="algoSteps">
-          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K markers at random into the cloud.</p></div>
-          <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every point joins its nearest marker.</p></div>
-          <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Each marker slides to its group’s average.</p></div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When markers stop moving, those colors are the palette.</p></div>
+          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Place K markers at random in the cloud. These first positions are almost always wrong — that’s fine.</p></div>
+          <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Each point joins whichever marker is closest. The cloud splits into K colored groups.</p></div>
+          <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Move each marker to the average position of the points that joined it — the true center of its group.</p></div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> Repeat Assign → Update. When the markers barely move, stop. Those K positions are your palette.</p></div>
         </div>
       </div>
       <div class="algo-stage">
         <div class="algo-stage-head">
-          <span class="algo-stage-title">Live 2-D sketch · 3 markers</span>
-          <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Guess — dropping random markers…</span></span>
+          <span class="algo-stage-title">Live sketch · same loop as your photo, flattened to 2-D</span>
+          <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Building a cloud of pixels…</span></span>
         </div>
         <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation of K-Means: random markers appear, points join them, markers slide to group centers, then the loop restarts."></canvas>
+          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation of K-Means: a cloud of points appears, random markers drop in, points join the nearest marker, markers slide to group centers, then the loop restarts."></canvas>
         </div>
         <div class="algo-legend">
-          <span><span class="d"></span> dot = a pixel (point)</span>
-          <span><span class="r"></span> ring = a mean (marker)</span>
+          <span><span class="d"></span> small dot = one pixel (a point in color space)</span>
+          <span><span class="r"></span> ring μ = a mean (a candidate palette color)</span>
         </div>
       </div>
     </div>
@@ -638,8 +642,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <section class="card lesson reveal" id="lessonCard" style="animation-delay:.03s">
     <div class="lesson-head">
       <div class="lede">
-        <h2>Today’s lab</h2>
-        <span class="control-desc">Pick a guided demo — each one sets up a photo and settings so you can see a specific idea play out.</span>
+        <h2>Try it on a photo</h2>
+        <span class="control-desc">Each demo loads a sample image and the settings that make one idea obvious. Skim the note, watch the image change, then tweak K yourself.</span>
       </div>
       <div class="mission-tabs" role="tablist" aria-label="Lab missions" id="missionTabs"></div>
     </div>
@@ -655,7 +659,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <div class="mission-tip" id="missionTip"></div>
       <div class="lesson-actions">
         <button class="btn small" id="missionPrevBtn">Previous</button>
-        <button class="btn small primary" id="missionNextBtn">Next mission</button>
+        <button class="btn small" id="missionNextBtn">Next demo</button>
       </div>
     </div>
   </section>
@@ -663,10 +667,10 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- Persistent vocabulary / phase strip -->
   <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="K-Means vocabulary">
     <div class="vocab-terms">
-      <span><b>point</b><span class="eq">=</span>pixel</span>
-      <span><b>mean</b><span class="eq">=</span>palette color</span>
-      <span><b>distance</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span>
-      <span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors</span>
+      <span class="vt"><span><b>point</b><span class="eq">=</span>one pixel</span><span class="why">a location in color space</span></span>
+      <span class="vt"><span><b>mean</b><span class="eq">=</span>a marker / palette color</span><span class="why">the center of a group</span></span>
+      <span class="vt"><span><b>distance</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span><span class="why">how “near” is measured</span></span>
+      <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors allowed</span><span class="why">how many means exist</span></span>
     </div>
     <div class="vocab-phase" aria-live="polite">
       <span class="phase-pill" id="phaseGuess">Guess</span>
@@ -685,7 +689,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <!-- STAGE -->
       <section class="card reveal" style="animation-delay:.05s" id="stageCard">
         <div class="card-head">
-          <h2>The Photo</h2>
+          <h2>Your photo in color space</h2>
           <div class="stage-tabs" role="tablist" aria-label="View mode">
             <button role="tab" id="tabSbs"    aria-selected="true"  aria-controls="viewSbs">Side&nbsp;by&nbsp;side</button>
             <button role="tab" id="tabCompare" aria-selected="false" aria-controls="viewCompare">Compare&nbsp;slider</button>
@@ -695,8 +699,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="stage-body">
           <!-- empty state / dropzone -->
           <div id="dropzone" class="dropzone">
-            <h3>Drop a photo — or start a mission above</h3>
-            <p>Nothing leaves your device. Missions load a sample with the right K for the lesson.</p>
+            <h3>Load any photo to run K-Means on real pixels</h3>
+            <p>Or use a demo above. Processing stays in your browser — nothing is uploaded.</p>
             <div class="dz-actions">
               <button class="btn primary" id="pickBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -710,11 +714,11 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <!-- side by side -->
           <div id="viewSbs" class="sbs hidden" role="tabpanel" aria-labelledby="tabSbs">
             <div class="pane">
-              <div class="plabel"><span class="tag orig"></span> Original <span id="origDims" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
+              <div class="plabel"><span class="tag orig"></span> Original pixels <span id="origDims" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
               <div class="viewport"><canvas id="canvasOrig"></canvas></div>
             </div>
             <div class="pane">
-              <div class="plabel"><span class="tag red"></span> Reduced to <span id="redK" style="color:var(--accent);font-weight:700">&nbsp;K</span> colors</div>
+              <div class="plabel"><span class="tag red"></span> After clustering · only <span id="redK" style="color:var(--accent);font-weight:700">&nbsp;K</span> colors</div>
               <div class="viewport"><canvas id="canvasReduced"></canvas></div>
             </div>
           </div>
@@ -724,8 +728,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <div class="compare" id="compare">
               <canvas id="cmpOrig"></canvas>
               <div class="after-clip" id="afterClip"><canvas id="cmpReduced"></canvas></div>
-              <span class="compare-badge l">Original</span>
-              <span class="compare-badge r">Reduced</span>
+              <span class="compare-badge l">All colors</span>
+              <span class="compare-badge r">K colors</span>
               <input type="range" min="0" max="100" value="50" class="compare-range" id="compareRange" aria-label="Reveal reduced image" aria-valuetext="50% reduced">
               <div class="compare-divider" id="cmpDivider"></div>
               <div class="compare-handle" id="cmpHandle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6-4 6 4 6M15 6l4 6-4 6"/></svg></div>
@@ -737,7 +741,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <div style="display:flex;gap:8px;align-items:center">
               <span class="computing-note hidden" id="computingNote">
                 <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
-                clustering…
+                running Assign → Update…
               </span>
               <button class="btn small" id="changeImgBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -752,8 +756,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <section class="card reveal" id="paletteCard" style="animation-delay:.1s;margin-top:var(--gap)">
         <div class="pal-toolbar">
           <div class="k-label-wrap">
-            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Discovered palette</h2>
-            <span class="control-desc">The means after convergence — a rule found without labels. Click a swatch to copy its hex.</span>
+            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">The palette K-Means found</h2>
+            <span class="control-desc">Each swatch is one final mean — the center of a group of pixels. Coverage % is how much of the photo landed in that group. Click a swatch to copy its hex.</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
@@ -764,7 +768,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
           </div>
         </div>
         <div class="palette" id="palette" aria-live="polite">
-          <p style="color:var(--ink-mute);font-size:14px;padding:8px">Load an image to reveal its palette.</p>
+          <p style="color:var(--ink-mute);font-size:14px;padding:8px;line-height:1.45">Once a photo is clustered, the settled means show up here as a palette. Nobody picked these colors by hand — the loop discovered them.</p>
         </div>
       </section>
 
@@ -772,7 +776,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <section class="card reveal explainer" style="animation-delay:.15s;margin-top:var(--gap)">
         <details open>
           <summary class="card-head" style="cursor:pointer;list-style:none">
-            <h2>How this works <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— for students</span></h2>
+            <h2>Color space &amp; the loop <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— deeper notes</span></h2>
             <span class="badge">read me</span>
           </summary>
           <div class="card-pad" style="padding-top:6px">
@@ -796,24 +800,24 @@ footer.foot a{color:var(--accent);text-decoration:none}
                 <circle cx="94" cy="50" r="4" fill="#b8860b"/>
                 <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
               </svg>
-              <div class="txt">Every pixel is really just three numbers — <b>R</b>ed, <b>G</b>reen, <b>B</b>lue. That makes it a single point floating in a 3-D “color space.” A whole photo is a <b>cloud of millions of these points</b>. K-Means’ job is to find the <b>K</b> best spots in that cloud.</div>
+              <div class="txt">Screens store color as <b>R</b>, <b>G</b>, <b>B</b> — three numbers from 0–255. Plot those as axes and every pixel becomes a single point. A photo is a dense cloud. K-Means’ only job is to park <b>K</b> markers inside that cloud and claim every point for the nearest marker.</div>
             </div>
 
             <div class="cols">
               <div>
                 <div class="steps">
-                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Drop K markers (the “means”) into the cloud of colors.</p></div>
-                  <div class="step"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins its nearest marker — that splits the cloud into K groups.</p></div>
-                  <div class="step"><span class="n">3</span><p><strong>Update.</strong> Each marker slides to the average color of the pixels that joined it.</p></div>
-                  <div class="step"><span class="n">4</span><p><strong>Converge.</strong> Repeat Assign → Update until the markers stop moving.</p></div>
+                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Choose K starting marker positions (random, or smarter with k-means++).</p></div>
+                  <div class="step"><span class="n">2</span><p><strong>Assign.</strong> For each pixel, measure distance to every marker; join the closest one. That carves the cloud into K groups (clusters).</p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Update.</strong> Replace each marker with the average color of the pixels that joined it. Empty groups get re-seeded so no color slot is wasted.</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Converge.</strong> Keep looping. When markers move less than a tiny threshold, stop — you’ve found a local solution.</p></div>
                 </div>
-                <p>Then we <strong>repaint</strong> every pixel with its group’s marker color. K colors, one photo — that’s the palette on the right.</p>
+                <p>Finally we <strong>repaint</strong> every pixel with its group’s marker color. The image now uses only K colors, and the markers are the palette.</p>
                 <div class="callout">
-                  Nobody labeled the pixels or told the algorithm which colors mattered — so this is <strong>unsupervised</strong> learning. The palette is a <em>rule the algorithm discovered by itself</em>, not one we wrote. Hit <strong>Re-seed</strong> and you may get a slightly different answer, because it starts from a random guess.
+                  No human labeled “sky” or “leaf.” The computer only followed a distance rule — that’s why this is called <strong>unsupervised</strong> learning. Different random starts can settle in different places, so two runs are not guaranteed to match. That’s a feature of the math, not a bug in the app.
                 </div>
               </div>
               <div class="callout" style="align-self:start">
-                The looping sketch at the top of the page is the same loop in flat 2-D. Your photo does it in 3-D color space with millions of points.
+                The looping sketch at the top is this exact procedure on a toy 2-D cloud. Your photo does the same thing in 3-D, with far more points. Play the sidebar animation to see Assign → Update rewrite the real image frame by frame.
               </div>
             </div>
           </div>
@@ -828,8 +832,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="card-pad k-block">
           <div class="k-top">
             <div class="k-label-wrap">
-              <span class="k-label">Number of colors <span aria-hidden="true" style="color:var(--ink-mute);font-weight:400">(K)</span></span>
-              <span class="control-desc k-desc">Drag to set how many colors K-Means may keep. Fewer = bold &amp; poster-like; more = closer to the photo.</span>
+              <span class="k-label">How many colors · <span aria-hidden="true" style="color:var(--ink-mute);font-weight:400">K</span></span>
+              <span class="control-desc k-desc">K is the number of means the algorithm is allowed to keep. Small K forces big groups → bold, poster-like images. Large K keeps more nuance → closer to the original.</span>
             </div>
             <span class="k-value" id="kValue">8<span class="unit">colors</span></span>
           </div>
@@ -841,7 +845,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <!-- ASSIGN → UPDATE → CONVERGE -->
       <section class="card reveal" style="animation-delay:.12s">
         <div class="card-head">
-          <h2>Assign → Update</h2>
+          <h2>Replay the loop</h2>
           <span class="badge" id="convBadge">idle</span>
         </div>
         <div class="card-pad learn">
@@ -852,7 +856,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <span class="phase-arrow">→</span>
             <span class="phase-pill" id="learnPhaseConverge">Converge</span>
           </div>
-          <p class="control-desc" style="margin-bottom:2px">Each loop: every pixel <b>joins</b> its nearest mean, then each mean <b>slides</b> to the average of its pixels. Play to watch the reduced image sharpen.</p>
+          <p class="control-desc" style="margin-bottom:2px">After clustering finishes we keep every intermediate step. <b>Play</b> walks through them: first pixels join markers (Assign), then markers slide (Update). Watch the reduced image get sharper as the groups settle.</p>
           <div class="learn-status">
             <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
             <span class="control-desc" id="phaseCaption" style="margin:0">idle</span>
@@ -886,18 +890,18 @@ footer.foot a{color:var(--accent);text-decoration:none}
           </summary>
           <div class="acc-body">
             <div class="exp-row">
-              <span class="lbl">Quick experiments</span>
+              <span class="lbl">Shortcuts that change the story</span>
               <div class="exp-btns">
-                <button class="btn small" id="expPosterize" title="K=4 on the current image">Posterize (K=4)</button>
-                <button class="btn small" id="expRandom" title="Random init + re-seed">Random starts</button>
-                <button class="btn small" id="expLab" title="Switch color space to LAB">Use LAB distance</button>
+                <button class="btn small" id="expPosterize" title="Force only 4 means">Force K=4</button>
+                <button class="btn small" id="expRandom" title="Random init + new seed">New random start</button>
+                <button class="btn small" id="expLab" title="Switch color space to LAB">Measure in LAB</button>
               </div>
             </div>
             <div class="divider"></div>
             <div class="opt-row">
               <div class="lblwrap">
-                <span class="lbl">Color space</span>
-                <div class="control-desc">How “distance” between colors is measured. <b>LAB</b> matches human vision, so groups often look more natural; <b>RGB</b> is the raw, faster option.</div>
+                <span class="lbl">Color space (the distance rule)</span>
+                <div class="control-desc"><b>RGB</b> uses the raw channel numbers — fast and simple, but “close in RGB” is not always “looks similar.” <b>LAB</b> remaps color so equal steps are closer to how people see differences; groups often look cleaner.</div>
               </div>
               <div class="segsm" role="group" aria-label="Color space">
                 <button id="csRGB" aria-pressed="true">RGB</button>
@@ -906,8 +910,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
             </div>
             <div class="opt-row">
               <div class="lblwrap">
-                <span class="lbl">Where markers start</span>
-                <div class="control-desc"><b>k-means++</b> spreads the first guesses apart (better, steadier results). <b>random</b> scatters them, so you’ll see more dramatic learning.</div>
+                <span class="lbl">Where the first markers land</span>
+                <div class="control-desc"><b>Random</b> scatters the K guesses — dramatic early frames, more chance of odd local solutions. <b>k-means++</b> spreads the first guesses apart on purpose, so runs are usually steadier.</div>
               </div>
               <div class="segsm" role="group" aria-label="Initialization method">
                 <button id="initPP"     aria-pressed="true">k-means++</button>
@@ -916,8 +920,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
             </div>
             <div class="opt-row" style="border-bottom:0">
               <div class="lblwrap">
-                <span class="lbl">Try a new starting guess</span>
-                <div class="control-desc">Same photo, fresh random start — results can vary. That’s K-Means being unsupervised.</div>
+                <span class="lbl">Re-seed the guess</span>
+                <div class="control-desc">Keep the same photo and K, but draw a new random starting set of markers. If the palette changes, you’ve seen that unsupervised solutions aren’t unique.</div>
               </div>
               <button class="btn small" id="reseedBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
@@ -930,7 +934,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- DOWNLOADS -->
       <section class="card reveal" style="animation-delay:.2s">
-        <div class="card-head"><h2>Export the rule</h2><span class="sub">unsupervised payoff</span></div>
+        <div class="card-head"><h2>Take the palette with you</h2><span class="sub">you discovered these colors</span></div>
         <div class="card-pad">
           <div class="dl-grid">
             <button class="btn small" id="dlPng" disabled>
@@ -956,8 +960,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
   </div>
 
   <footer class="foot">
-    <span>Chroma Lab · a K-Means teaching tool. Everything runs locally — <strong>no uploads, works offline</strong>.</span>
-    <span>Tip: read the source — the K-Means loop is commented for students.</span>
+    <span>Chroma Lab teaches K-Means by running it on pixels in your browser — <strong>no uploads, works offline</strong>.</span>
+    <span>The worker source at the bottom of this file comments every Assign / Update step.</span>
   </footer>
 </div>
 
@@ -1727,11 +1731,11 @@ function initAlgoDemo(){
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
 
   const phaseCopy={
-    seed:'Cloud of pixels — no markers yet',
-    guess:'Guess — dropping random markers…',
-    assign:'Assign — each point joins its nearest marker',
-    update:'Update — markers slide to group averages',
-    converge:'Converged — palette settled · restarting…'
+    seed:'First: a cloud of unlabeled pixels…',
+    guess:'Guess — planting random markers (μ)…',
+    assign:'Assign — each pixel joins its nearest μ',
+    update:'Update — each μ slides to its group’s center',
+    converge:'Converged — markers stopped · new random start next'
   };
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
@@ -1993,29 +1997,29 @@ const MISSIONS=[
     id:'posterize',
     n:'1',
     tab:'Posterize',
-    title:'Posterize a sunset',
-    goal:'Load Dusk with K=4. Smooth gradients should collapse into flat bands — that’s what happens when K is too small for the scene.',
-    tip:'With only 4 means, whole ranges of similar pixels must share one color. Raise K afterward and watch the bands soften.',
+    title:'Too few colors (small K)',
+    goal:'We load the Dusk sample with K=4. Smooth sky gradients need many nearby colors; with only four means, whole ranges of orange and purple get collapsed into flat bands — classic posterization.',
+    tip:'After it settles, drag K upward. Each new mean can claim part of a gradient, so banding softens. That is the tradeoff K always makes: simplicity versus fidelity.',
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['photo','Dusk'],['K','4'],['look for','banding']]
+    chips:[['photo','Dusk'],['K','4'],['watch for','flat bands']]
   },
   {
     id:'distance',
     n:'2',
     tab:'Distance',
-    title:'Distance is a choice',
-    goal:'Same Bloom photo, but measure “near” in LAB (closer to human vision) instead of raw RGB. The palette often looks less muddy.',
-    tip:'K-Means only knows the distance you give it. Flip Color space to RGB on the same photo and compare — “near” changes, so the discovered rule changes.',
+    title:'“Near” depends on the ruler',
+    goal:'Bloom runs in LAB space. K-Means only groups by distance — change the distance rule and you change which pixels feel “near,” so the palette can shift even when K stays the same.',
+    tip:'Flip Color space to RGB on this same photo. If greens or pinks look muddier, you’ve seen why people often prefer LAB for perceptual clustering.',
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
-    chips:[['photo','Bloom'],['distance','LAB'],['compare','flip to RGB']]
+    chips:[['photo','Bloom'],['distance','LAB'],['compare','switch to RGB']]
   },
   {
     id:'random',
     n:'3',
     tab:'Lucky guess',
-    title:'Unsupervised ≠ unique',
-    goal:'Grove with random initialization. Hit Re-seed a few times — different starting guesses can settle into different green palettes.',
-    tip:'The algorithm discovers a rule, not the rule. k-means++ spreads the first guesses to make results steadier — try flipping init after you re-seed.',
+    title:'Random starts, different endings',
+    goal:'Grove uses random initialization. The first marker positions are a luck-of-the-draw Guess. Hit Re-seed a few times — different starts can converge to different green palettes.',
+    tip:'That is the unsupervised punchline: the math finds a local solution, not a single global “correct” palette. Switch to k-means++ if you want steadier starts.',
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
     chips:[['photo','Grove'],['init','random'],['try','Re-seed']]
   },
@@ -2023,11 +2027,11 @@ const MISSIONS=[
     id:'free',
     n:'∞',
     tab:'Free lab',
-    title:'Free exploration',
-    goal:'Your turn. Drop any photo, drag K, flip RGB/LAB, and export the palette you discovered. Use Assign → Update to watch the loop.',
-    tip:'',
+    title:'Open sandbox',
+    goal:'Drop your own photo. Choose K, pick RGB or LAB, watch Assign → Update in the sidebar, then export the palette the loop discovered.',
+    tip:'A useful habit: change only one setting at a time (K, or distance, or init) so you can see which knob caused the change.',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['mode','sandbox'],['export','CSS / PNG']]
+    chips:[['mode','sandbox'],['export','PNG · JSON · CSS']]
   }
 ];
 
@@ -2049,13 +2053,13 @@ function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
   ['phaseGuess','phaseAssign','phaseUpdate','phaseConverge',
    'learnPhaseAssign','learnPhaseUpdate','learnPhaseConverge'].forEach(id=>set(id,''));
 
-  let caption='idle — load a photo or pick a mission';
+  let caption='Load a photo (or a demo) to run the loop on real pixels';
   if(!hasHistory){
     set('phaseGuess','active');
   }else if(converged && atEnd && !playing){
     set('phaseGuess','done'); set('phaseAssign','done'); set('phaseUpdate','done'); set('phaseConverge','active');
     set('learnPhaseAssign','done'); set('learnPhaseUpdate','done'); set('learnPhaseConverge','active');
-    caption='converged — markers stopped moving';
+    caption='Converged — markers stopped moving; palette is final';
   }else if(playing){
     // even frames emphasize Assign; odd emphasize Update (each history snap is post-assign)
     const assignBeat = (frame % 2) === 0;
@@ -2064,15 +2068,15 @@ function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
     set('phaseUpdate', assignBeat?'done':'active');
     set('learnPhaseAssign', assignBeat?'active':'');
     set('learnPhaseUpdate', assignBeat?'':'active');
-    caption = assignBeat ? 'Assign — pixels join nearest mean' : 'Update — means slide to averages';
+    caption = assignBeat ? 'Assign — pixels join the nearest mean' : 'Update — means slide toward group averages';
   }else if(frame===0){
     set('phaseGuess','active'); set('phaseAssign','active');
     set('learnPhaseAssign','active');
-    caption='iteration 1 — first assignment after the guess';
+    caption='Iteration 1 — first assignment after the random guess';
   }else{
     set('phaseGuess','done'); set('phaseAssign','active'); set('phaseUpdate','done');
     set('learnPhaseAssign','active'); set('learnPhaseUpdate','done');
-    caption='paused mid-loop — Step or Play to continue';
+    caption='Paused mid-loop — Step or Play to continue';
   }
   const cap=$('phaseCaption'); if(cap) cap.textContent=caption;
 }
@@ -2113,7 +2117,7 @@ function renderMissionChrome(){
   });
   const idx=MISSIONS.findIndex(x=>x.id===lesson.missionId);
   $('missionPrevBtn').disabled = idx<=0;
-  $('missionNextBtn').textContent = idx>=MISSIONS.length-1 ? 'Back to start' : 'Next mission';
+  $('missionNextBtn').textContent = idx>=MISSIONS.length-1 ? 'Back to first demo' : 'Next demo';
 }
 
 function startMission(id, opts){
