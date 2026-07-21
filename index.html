@@ -401,6 +401,29 @@ details.acc[open]>summary .chev{transform:rotate(90deg)}
 .rgb-explain svg{flex:none}
 .rgb-explain .txt{font-size:13.5px;color:var(--ink);min-width:200px;flex:1;line-height:1.5}
 .rgb-explain .txt b{color:var(--accent)}
+.space-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 18px}
+@media(max-width:640px){.space-grid{grid-template-columns:1fr}}
+.space-card{
+  border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;background:var(--surface);
+  display:flex;flex-direction:column;gap:8px;
+}
+.space-card h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.space-card h3 .tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 7px;border-radius:99px;border:1px solid var(--line);color:var(--ink-mute);font-weight:600;
+}
+.space-card.lab h3 .tag{border-color:color-mix(in srgb,var(--cyan) 50%,var(--line));color:var(--cyan)}
+.space-card.rgb h3 .tag{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent)}
+.space-card p{font-size:13px;color:var(--ink-mute);line-height:1.45;margin:0}
+.space-card ul{margin:0;padding-left:1.1em;font-size:12.5px;color:var(--ink);line-height:1.45;display:grid;gap:4px}
+.space-card li::marker{color:var(--accent)}
+.space-card.lab li::marker{color:var(--cyan)}
+.ruler-live{
+  margin-top:4px;padding:10px 12px;border-radius:10px;border:1px dashed var(--line);
+  font-size:12.5px;line-height:1.45;color:var(--ink-mute);background:var(--surface-2);
+}
+.ruler-live b{color:var(--ink)}
+.ruler-live .which{color:var(--accent);font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
 /* mini live 2-D k-means demo */
 .mini{border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:14px;display:flex;flex-direction:column;gap:10px;position:sticky;top:18px}
 .mini canvas{width:100%;height:auto;border-radius:10px;background:var(--surface);display:block;border:1px solid var(--line)}
@@ -629,9 +652,9 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== MASTHEAD ===================== -->
   <header class="masthead reveal">
     <div class="brand">
-      <span class="eyebrow">A computer finds patterns · by itself</span>
+      <span class="eyebrow">Pixels · RGB recipes · K-Means teams</span>
       <h1>Chroma <em>Lab</em></h1>
-      <p class="tagline">A photo is made of tiny colored dots called pixels. This site shows how a computer program called <b>K-Means</b> picks a small set of colors that still look like the picture — by guessing, grouping, and fixing its guess over and over.</p>
+      <p class="tagline">Every pixel on a screen is a recipe of three numbers — <b>R</b>ed, <b>G</b>reen, <b>B</b>lue. K-Means groups those recipes into K teams. You can measure “close” with the raw RGB numbers, or remix them into <b>LAB</b>, a ruler built to match human eyes better.</p>
     </div>
     <div class="masthead-right">
       <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
@@ -647,17 +670,17 @@ footer.foot a{color:var(--accent);text-decoration:none}
     <div class="algo-grid">
       <div class="algo-copy">
         <h2>The big idea (watch the movie →)</h2>
-        <p class="lede">Imagine dumping all the pixels from a photo onto a table as colored dots. Similar colors land near each other and make clumps. K-Means tries to put a flag in the middle of each clump.</p>
-        <p class="lede">It does <b>not</b> know the “right” answer. It starts with a <b>wild guess</b>, then runs a short loop until the flags stop moving. Those final flag colors are the palette.</p>
+        <p class="lede">A photo is millions of tiny squares called <b>pixels</b>. Each pixel is stored as three dials from 0–255: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue light to mix. That RGB recipe is what the screen actually uses.</p>
+        <p class="lede">If you plot those three dials as a position in space, similar colors form clumps. K-Means plants <b>K</b> flags in that cloud, then loops: group every pixel to the closest flag, move each flag to its team’s middle, repeat until the flags stop. The catch: “closest” needs a <b>ruler</b> — RGB or LAB — and the ruler changes who sits next to whom.</p>
         <div class="algo-steps" id="algoSteps">
-          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places. First try is usually messy — that’s OK.</p></div>
+          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
           <div class="algo-loop" id="algoLoop" aria-label="Repeat group and move until the flags stop moving">
             <span class="algo-loop-label">repeat this loop</span>
-            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Group (Assign).</strong> Every dot joins the closest flag. Now you have K teams of colors.</p></div>
-            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Move (Update).</strong> Slide each flag to the middle of its team — like finding the average color of that group.</p></div>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Group.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Move.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
             <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
           </div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Done (Converge).</strong> When flags barely move, stop. Paint every pixel with its team’s flag color. That’s the simplified picture.</p></div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Done.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
         </div>
       </div>
       <div class="algo-stage">
@@ -672,6 +695,66 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <span><span class="d"></span> small dot = one pixel</span>
           <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RGB vs LAB ===================== -->
+  <section class="card reveal" id="spaceCard" style="animation-delay:.025s;margin-bottom:var(--gap)">
+    <div class="card-head">
+      <h2>RGB vs LAB — the ruler for “close”</h2>
+      <span class="sub" id="spaceActiveLabel">using RGB right now</span>
+    </div>
+    <div class="card-pad" style="padding-top:14px">
+      <div class="rgb-explain" style="margin-bottom:14px">
+        <svg width="140" height="116" viewBox="0 0 140 116" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g stroke="var(--line-strong)" stroke-width="1.5" stroke-linejoin="round">
+            <path d="M40 26 H92 V78 H40 Z" opacity=".45"/>
+            <path d="M52 40 H104 V92 H52 Z"/>
+            <path d="M40 26 L52 40 M92 26 L104 40 M92 78 L104 92 M40 78 L52 92" opacity=".6"/>
+          </g>
+          <g stroke-width="2.2" stroke-linecap="round">
+            <path d="M52 92 H104" stroke="#d34122"/>
+            <path d="M52 92 V40" stroke="#1f9a4f"/>
+            <path d="M52 92 L40 78" stroke="#2f7bd4"/>
+          </g>
+          <text x="107" y="106" fill="#d34122" font-size="12" font-family="ui-monospace,monospace" font-weight="700">R</text>
+          <text x="38" y="36" fill="#1f9a4f" font-size="12" font-family="ui-monospace,monospace" font-weight="700">G</text>
+          <text x="22" y="74" fill="#2f7bd4" font-size="12" font-family="ui-monospace,monospace" font-weight="700">B</text>
+          <circle cx="86" cy="60" r="5.5" fill="#d34122"/>
+          <circle cx="72" cy="70" r="4" fill="#1f7a75"/>
+          <circle cx="94" cy="50" r="4" fill="#b8860b"/>
+          <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
+        </svg>
+        <div class="txt">
+          Your screen only understands <b>RGB</b>. A bright red pixel might be <b>(255, 0, 0)</b> — max red, no green, no blue. A pale sky might be something like <b>(180, 210, 240)</b>. K-Means needs to decide which recipes are “neighbors.” That decision is not free: you pick the measuring stick.
+        </div>
+      </div>
+
+      <div class="space-grid">
+        <div class="space-card rgb">
+          <h3>RGB <span class="tag">screen recipe</span></h3>
+          <p>Three numbers the monitor already uses: Red, Green, Blue. Distance = how different those three dials are.</p>
+          <ul>
+            <li>Easy to explain: it’s the real storage format.</li>
+            <li>Fast for the computer.</li>
+            <li>Problem: equal jumps in the numbers don’t always look equal to your eyes. A “small” RGB change can look huge (or tiny) depending on the color.</li>
+          </ul>
+        </div>
+        <div class="space-card lab">
+          <h3>LAB <span class="tag">eye-friendly remix</span></h3>
+          <p>We convert each RGB pixel into a new trio: <b>L</b> = light↔dark, <b>a</b> ≈ green↔red, <b>b</b> ≈ blue↔yellow. Then we measure distance in that remixed space.</p>
+          <ul>
+            <li>Built so “close in LAB” is closer to “looks similar.”</li>
+            <li>Same photo, same K — but teams can form differently than in RGB.</li>
+            <li>After clustering we convert flags back to RGB so the screen can draw them.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ruler-live" id="rulerLive">
+        <span class="which" id="rulerWhich">Active ruler: RGB</span>
+        <span id="rulerBlurb">Grouping with the raw Red/Green/Blue dials. “Near” means the three numbers are alike — which is simple, but not always what your eyes would call alike.</span>
       </div>
     </div>
   </section>
@@ -705,9 +788,9 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- Persistent vocabulary / phase strip -->
   <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="Word bank">
     <div class="vocab-terms">
-      <span class="vt"><span><b>pixel</b><span class="eq">=</span>one tiny colored square</span><span class="why">the building block of a photo</span></span>
-      <span class="vt"><span><b>flag / mean</b><span class="eq">=</span>one chosen color</span><span class="why">stands for a whole group</span></span>
-      <span class="vt"><span><b>near</b><span class="eq">=</span>measured in <span id="vocabDistance">RGB</span></span><span class="why">the “ruler” for closeness</span></span>
+      <span class="vt"><span><b>pixel</b><span class="eq">=</span>R + G + B recipe</span><span class="why">three dials 0–255 on screen</span></span>
+      <span class="vt"><span><b>flag / mean</b><span class="eq">=</span>one team color</span><span class="why">stands for many pixels</span></span>
+      <span class="vt"><span><b>ruler</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span><span class="why" id="vocabRulerWhy">raw screen numbers</span></span>
       <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors max</span><span class="why">how many flags you allow</span></span>
     </div>
     <div class="vocab-phase" aria-live="polite">
@@ -733,6 +816,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <button role="tab" id="tabCompare" aria-selected="false" aria-controls="viewCompare">Compare&nbsp;slider</button>
           </div>
         </div>
+        <p class="control-desc" style="padding:10px var(--pad) 0;margin:0">Every pixel here is an RGB recipe. Grouping happens in the ruler you chose (<span id="stageRuler">RGB</span>) — then we paint the result back in RGB so the screen can show it.</p>
 
         <div class="stage-body">
           <!-- empty state / dropzone -->
@@ -795,7 +879,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="pal-toolbar">
           <div class="k-label-wrap">
             <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Colors the computer picked</h2>
-            <span class="control-desc">Each box is one final flag color. The % says how much of the photo joined that team. Click a box to copy its code.</span>
+            <span class="control-desc">Each box is one final flag, shown as an RGB hex code the screen can use. The % is how many pixels joined that team while measuring nearness in <span id="palRuler">RGB</span>. Click to copy.</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
@@ -814,7 +898,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <section class="card reveal explainer" style="animation-delay:.15s;margin-top:var(--gap)">
         <details open>
           <summary class="card-head" style="cursor:pointer;list-style:none">
-            <h2>More detail <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— if you want it</span></h2>
+            <h2>RGB, LAB, and the loop <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— deeper notes</span></h2>
             <span class="badge">optional</span>
           </summary>
           <div class="card-pad" style="padding-top:6px">
@@ -838,24 +922,50 @@ footer.foot a{color:var(--accent);text-decoration:none}
                 <circle cx="94" cy="50" r="4" fill="#b8860b"/>
                 <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
               </svg>
-              <div class="txt">Every screen color is three numbers: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue (0 to 255). If you pretend those are left/right, up/down, and depth, each pixel is a spot in space. A photo is a huge cloud of spots. K-Means plants <b>K</b> flags in that cloud and gives every spot to the nearest flag.</div>
+              <div class="txt">
+                <b>Start here:</b> a pixel is never “just red.” It is always three amounts of light mixed together — Red, Green, Blue. That RGB cube (picture on the left) is how computers store color. K-Means treats each pixel as a point in whatever space you choose, then finds K centers.
+              </div>
             </div>
+
+            <div class="space-grid">
+              <div class="space-card rgb">
+                <h3>Why RGB exists <span class="tag">hardware</span></h3>
+                <p>Screens make every color by mixing three lights. So RGB is the natural language of displays and image files.</p>
+                <ul>
+                  <li>Example: pure blue ≈ (0, 0, 255)</li>
+                  <li>Example: white ≈ (255, 255, 255)</li>
+                  <li>Example: dark gray ≈ (40, 40, 40)</li>
+                  <li>K-Means in RGB asks: “Are these three dials similar?”</li>
+                </ul>
+              </div>
+              <div class="space-card lab">
+                <h3>Why invent LAB? <span class="tag">perception</span></h3>
+                <p>Your eyes don’t treat every RGB jump the same. LAB reshapes the map so steps match “looks different” more evenly.</p>
+                <ul>
+                  <li><b>L</b> = Lightness (black → white)</li>
+                  <li><b>a</b> ≈ green ↔ red</li>
+                  <li><b>b</b> ≈ blue ↔ yellow</li>
+                  <li>K-Means in LAB asks: “Would these look similar to a person?”</li>
+                </ul>
+              </div>
+            </div>
+
+            <p style="font-size:14px;margin-bottom:14px;line-height:1.5">Important: even in LAB mode, the photo still <b>starts</b> as RGB and the final flags are converted <b>back</b> to RGB for painting and hex codes. LAB is only the temporary classroom where “near” is graded.</p>
 
             <div class="cols">
               <div>
                 <div class="steps">
-                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Put K flags down (random, or a smarter spread called k-means++).</p></div>
-                  <div class="step"><span class="n">2</span><p><strong>Group.</strong> For each pixel, find the closest flag and join that team.</p></div>
-                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Put each flag in the “middle” of its team (the average color). Empty teams get a new random flag.</p></div>
-                  <div class="step"><span class="n">4</span><p><strong>Done.</strong> Repeat Group → Move until the flags almost stop sliding.</p></div>
+                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Put K flags down in the chosen space (RGB numbers, or LAB remixes).</p></div>
+                  <div class="step"><span class="n">2</span><p><strong>Group.</strong> For each pixel, find the closest flag with that same ruler.</p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Put each flag at the average of its team (average RGB or average LAB, matching the ruler).</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Done.</strong> Repeat until flags almost stop. Convert centers to RGB and repaint.</p></div>
                 </div>
-                <p>Last step: <strong>repaint</strong> every pixel with its team’s flag color. Now the picture only uses K colors.</p>
                 <div class="callout">
-                  Nobody told the computer “this is sky” or “this is a leaf.” It only used a closeness rule. Grown-ups call that <strong>unsupervised learning</strong> — learning without labels. Start from a different random Guess and you might get a slightly different palette. That’s normal!
+                  Nobody labeled “sky” or “leaf.” The computer only followed a closeness rule in RGB or LAB. Grown-ups call that <strong>unsupervised learning</strong>. Change the ruler and you can get a different “discovered” palette from the same photo.
                 </div>
               </div>
               <div class="callout" style="align-self:start">
-                The cartoon at the top is the same loop on a flat table. Your photo does it with millions of dots in 3-D. Hit <b>Play</b> on the right to watch Group → Move change the real picture step by step.
+                Try the <b>Nearness</b> demo (LAB), then flip the sidebar to RGB without changing K. Same pixels, same number of flags — different teams — because “close” changed.
               </div>
             </div>
           </div>
@@ -894,7 +1004,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <span class="phase-arrow">→</span>
             <span class="phase-pill" id="learnPhaseConverge">Done</span>
           </div>
-          <p class="control-desc" style="margin-bottom:2px">We saved every step. Press <b>Play</b> to see dots join flags (Group), then flags slide to the middle (Move). The simplified picture gets clearer as it goes.</p>
+          <p class="control-desc" style="margin-bottom:2px">We saved every Group → Move step. “Closest flag” used the <span id="learnRuler">RGB</span> ruler. Press <b>Play</b> to watch teams form, then flags slide. The picture is always drawn in RGB at the end.</p>
           <div class="learn-status">
             <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
             <span class="control-desc" id="phaseCaption" style="margin:0">idle</span>
@@ -932,14 +1042,17 @@ footer.foot a{color:var(--accent);text-decoration:none}
               <div class="exp-btns">
                 <button class="btn small" id="expPosterize" title="Only allow 4 colors">Only 4 colors</button>
                 <button class="btn small" id="expRandom" title="New random start">New random start</button>
-                <button class="btn small" id="expLab" title="Use LAB ruler">Use LAB ruler</button>
+                <button class="btn small" id="expLab" title="Group pixels using the LAB ruler">Switch to LAB</button>
               </div>
             </div>
             <div class="divider"></div>
             <div class="opt-row">
               <div class="lblwrap">
-                <span class="lbl">How we measure “near”</span>
-                <div class="control-desc"><b>RGB</b> uses the three screen numbers as-is — simple. <b>LAB</b> is a different ruler that matches human eyes a bit better, so teams often look nicer.</div>
+                <span class="lbl">Ruler for “near”: RGB or LAB</span>
+                <div class="control-desc">
+                  Pixels always begin as <b>RGB</b> (three light dials). <b>RGB mode</b> groups with those dials directly — simple, but not always eye-true.
+                  <b>LAB mode</b> first remaps each pixel to Lightness + color-opponent axes, groups there (usually looks cleaner), then converts flags back to RGB to draw.
+                </div>
               </div>
               <div class="segsm" role="group" aria-label="Color space">
                 <button id="csRGB" aria-pressed="true">RGB</button>
@@ -972,7 +1085,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- DOWNLOADS -->
       <section class="card reveal" style="animation-delay:.2s">
-        <div class="card-head"><h2>Save your colors</h2><span class="sub">the computer found these</span></div>
+        <div class="card-head"><h2>Save your RGB colors</h2><span class="sub">flags shown as screen recipes</span></div>
         <div class="card-pad">
           <div class="dl-grid">
             <button class="btn small" id="dlPng" disabled>
@@ -2038,18 +2151,18 @@ const MISSIONS=[
     n:'1',
     tab:'Few colors',
     title:'What if K is too small?',
-    goal:'We open the Dusk picture with only K=4 colors. Smooth sunsets need lots of close oranges and purples. With just four flags, big stretches get smashed into flat blocks — like a poster.',
-    tip:'When it finishes, drag K higher. Extra flags can cover parts of the gradient, so the bands get softer. That’s the trade: fewer colors = simpler, more colors = more detail.',
+    goal:'Dusk is full of smooth RGB blends (lots of nearby orange/purple recipes). With only K=4 flags in RGB space, many different recipes get forced onto the same team — so the sky turns into flat poster bands.',
+    tip:'Raise K. Extra flags can cover slices of the gradient. You’re still grouping RGB numbers; you’re just allowing more team centers.',
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['photo','Dusk'],['K','4'],['look for','flat bands']]
+    chips:[['photo','Dusk'],['ruler','RGB'],['K','4']]
   },
   {
     id:'distance',
     n:'2',
     tab:'Nearness',
-    title:'“Close” depends on the ruler',
-    goal:'Bloom uses the LAB ruler. K-Means only cares about what “near” means. Change the ruler and different pixels can end up on the same team — even if K stays the same.',
-    tip:'Switch “How we measure near” to RGB on this same photo. If some colors look muddier, you’ve seen why LAB is often nicer for people-looking eyes.',
+    title:'Same pixels, different ruler',
+    goal:'Bloom still starts as RGB pixels, but we convert them to LAB before grouping. LAB remixes each recipe into Lightness + color axes so “close” matches eyes better. Flip to RGB afterward — K stays 8, but teams can change because nearness changed.',
+    tip:'Watch greens and pinks when you switch rulers. If LAB looks cleaner, you’ve seen why people invent a second color space even though screens only speak RGB.',
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
     chips:[['photo','Bloom'],['ruler','LAB'],['try','switch to RGB']]
   },
@@ -2058,29 +2171,44 @@ const MISSIONS=[
     n:'3',
     tab:'Lucky start',
     title:'Different guesses, different endings',
-    goal:'Grove starts with random flags. Hit New Guess a few times. Same trees, same K — but the greens can settle differently because the first throw was luck.',
-    tip:'That’s the big lesson: the computer finds a good answer, not the only answer. Use k-means++ if you want calmer, more repeatable starts.',
+    goal:'Grove groups in RGB with random first flags. The pixels’ RGB recipes never change — only the starting Guess does. Hit New Guess a few times and the green teams can settle differently.',
+    tip:'Unsupervised means: no teacher said which green is “correct.” Same RGB cloud, different lucky starts → different local answers. Try k-means++ for calmer starts.',
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
-    chips:[['photo','Grove'],['start','random'],['try','New Guess']]
+    chips:[['photo','Grove'],['ruler','RGB'],['start','random']]
   },
   {
     id:'free',
     n:'∞',
     tab:'Free play',
     title:'Your turn',
-    goal:'Drop any photo you like. Change K, try RGB or LAB, press Play to watch Group → Move, then save the colors if you want.',
-    tip:'Change one thing at a time (only K, or only the ruler) so you can tell what caused the change.',
+    goal:'Drop any photo. Remember: every pixel is an RGB recipe; RGB/LAB only chooses the ruler for Group/Move. Change K, flip the ruler, press Play, then save the RGB palette if you want.',
+    tip:'Change one knob at a time — K, or RGB↔LAB — so you can see which change moved the teams.',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['mode','sandbox'],['save','PNG · CSS']]
+    chips:[['mode','sandbox'],['pixels','always RGB'],['ruler','your pick']]
   }
 ];
 
 let lesson={missionId:'posterize'};
 
 function syncVocab(){
-  const d=$('vocabDistance'), k=$('vocabK');
-  if(d) d.textContent = state.colorSpace==='lab' ? 'LAB' : 'RGB';
+  const lab = state.colorSpace==='lab';
+  const name = lab ? 'LAB' : 'RGB';
+  const d=$('vocabDistance'), k=$('vocabK'), why=$('vocabRulerWhy');
+  if(d) d.textContent = name;
   if(k) k.textContent = String(state.K);
+  if(why) why.textContent = lab ? 'eye-friendly remix' : 'raw screen numbers';
+
+  const which=$('rulerWhich'), blurb=$('rulerBlurb'), active=$('spaceActiveLabel');
+  if(which) which.textContent = 'Active ruler: ' + name;
+  if(active) active.textContent = 'using ' + name + ' right now';
+  if(blurb){
+    blurb.textContent = lab
+      ? 'Grouping after remixing each RGB pixel into LAB (Lightness, green↔red, blue↔yellow). “Near” is closer to what your eyes call similar — then flags convert back to RGB for the screen.'
+      : 'Grouping with the raw Red/Green/Blue dials stored in the file. “Near” means the three numbers are alike — simple for computers, but not always what your eyes would call alike.';
+  }
+  ['stageRuler','palRuler','learnRuler'].forEach(id=>{
+    const el=$(id); if(el) el.textContent = name;
+  });
 }
 
 function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
