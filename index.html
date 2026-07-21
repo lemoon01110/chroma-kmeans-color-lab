@@ -535,14 +535,14 @@ footer.foot a{color:var(--accent);text-decoration:none}
   overflow:hidden;
 }
 .algo-grid{
-  display:grid;grid-template-columns:1.05fr .95fr;gap:0;align-items:stretch;
+  display:grid;grid-template-columns:1fr;gap:0;align-items:stretch;
 }
-@media(max-width:860px){.algo-grid{grid-template-columns:1fr}}
-.algo-copy{padding:var(--pad);display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--line)}
-@media(max-width:860px){.algo-copy{border-right:0;border-bottom:1px solid var(--line)}}
+.algo-copy{padding:var(--pad);display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px 28px;align-items:start;border-top:1px solid var(--line)}
+@media(max-width:860px){.algo-copy{grid-template-columns:1fr;gap:14px}}
+.algo-copy-main{display:flex;flex-direction:column;gap:12px}
 .algo-copy h2{font-family:var(--font-display);font-size:clamp(22px,2.6vw,28px);font-weight:600;letter-spacing:-.02em;line-height:1.15}
-.algo-copy .lede{font-size:14.5px;color:var(--ink-mute);line-height:1.55;max-width:52ch}
-.algo-copy .lede + .lede{margin-top:-6px}
+.algo-copy .lede{font-size:14.5px;color:var(--ink-mute);line-height:1.55;max-width:58ch}
+.algo-copy .lede + .lede{margin-top:-4px}
 .algo-steps{display:grid;gap:8px;margin-top:2px}
 .algo-step{
   display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;
@@ -586,36 +586,39 @@ footer.foot a{color:var(--accent);text-decoration:none}
   color:var(--accent);font-weight:700;letter-spacing:.02em;
 }
 .algo-stage{
-  padding:var(--pad);display:flex;flex-direction:column;gap:10px;background:var(--surface-2);
+  padding:clamp(14px,2vw,22px);display:flex;flex-direction:column;gap:12px;background:var(--surface-2);
 }
 .algo-stage-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.algo-stage-title{font-size:13px;font-weight:600}
+.algo-stage-title{font-size:15px;font-weight:600}
 .algo-mode{
   display:inline-flex;gap:2px;padding:3px;border-radius:9px;border:1px solid var(--line);background:var(--surface);
 }
 .algo-mode button{
-  font:inherit;font-size:11px;font-weight:700;font-family:var(--font-mono);letter-spacing:.04em;
-  border:0;background:transparent;color:var(--ink-mute);padding:4px 10px;border-radius:6px;cursor:pointer;
+  font:inherit;font-size:12px;font-weight:700;font-family:var(--font-mono);letter-spacing:.04em;
+  border:0;background:transparent;color:var(--ink-mute);padding:5px 12px;border-radius:6px;cursor:pointer;
 }
 .algo-mode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .algo-live{
-  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.03em;color:var(--accent);
+  font-family:var(--font-mono);font-size:13px;letter-spacing:.03em;color:var(--accent);
   display:inline-flex;align-items:center;gap:7px;
 }
-.algo-live .pulse{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.1s infinite}
+.algo-live .pulse{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.1s infinite}
 .algo-canvas-wrap{
-  position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);
-  background:var(--surface);aspect-ratio:16/10;min-height:220px;
+  position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  background:var(--surface);
+  aspect-ratio:16/9;
+  min-height:clamp(340px, 62vh, 720px);
+  max-height:min(72vh, 780px);
 }
 .algo-canvas-wrap canvas{display:block;width:100%;height:100%}
-.algo-legend{display:flex;gap:14px;font-size:12px;color:var(--ink-mute);flex-wrap:wrap}
-.algo-legend span{display:inline-flex;align-items:center;gap:6px}
-.algo-legend .dots{display:inline-flex;gap:3px;align-items:center}
-.algo-legend .d{width:9px;height:9px;border-radius:50%}
+.algo-legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink-mute);flex-wrap:wrap}
+.algo-legend span{display:inline-flex;align-items:center;gap:7px}
+.algo-legend .dots{display:inline-flex;gap:4px;align-items:center}
+.algo-legend .d{width:11px;height:11px;border-radius:50%}
 .algo-legend .d.d1{background:var(--accent)}
 .algo-legend .d.d2{background:var(--cyan)}
 .algo-legend .d.d3{background:var(--gold)}
-.algo-legend .r{width:13px;height:13px;border-radius:50%;border:3px solid var(--accent);box-sizing:border-box}
+.algo-legend .r{width:15px;height:15px;border-radius:50%;border:3px solid var(--accent);box-sizing:border-box}
 
 .vocab{
   position:sticky;top:0;z-index:25;
@@ -680,21 +683,6 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== ALGORITHM INTRO ===================== -->
   <section class="card algo reveal" id="algoIntro" style="animation-delay:.02s">
     <div class="algo-grid">
-      <div class="algo-copy">
-        <h2>The big idea (watch the movie →)</h2>
-        <p class="lede">A photo is millions of tiny squares called <b>pixels</b>. Each pixel is stored as three dials from 0–255: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue light to mix. That RGB recipe is what the screen actually uses.</p>
-        <p class="lede">Watch the movie: first a <b>flat 2-D cartoon</b>, then the same loop in <b>3-D RGB space</b> — each dial becomes an axis (R, G, B). Similar colors form clumps. K-Means plants <b>K</b> flags, then loops: join the closest flag, move each flag to its team’s middle, repeat. The catch: “closest” needs a <b>ruler</b> — RGB or LAB.</p>
-        <div class="algo-steps" id="algoSteps">
-          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
-          <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the flags stop moving">
-            <span class="algo-loop-label">repeat this loop</span>
-            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
-            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
-            <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
-          </div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
-        </div>
-      </div>
       <div class="algo-stage">
         <div class="algo-stage-head">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -707,11 +695,28 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Spreading out a cloud of dots…</span></span>
         </div>
         <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes."></canvas>
+          <canvas id="algoDemo" width="1120" height="630" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes."></canvas>
         </div>
         <div class="algo-legend" id="algoLegend">
           <span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
           <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
+        </div>
+      </div>
+      <div class="algo-copy">
+        <div class="algo-copy-main">
+          <h2>The big idea (watch the movie ↑)</h2>
+          <p class="lede">A photo is millions of tiny squares called <b>pixels</b>. Each pixel is stored as three dials from 0–255: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue light to mix. That RGB recipe is what the screen actually uses.</p>
+          <p class="lede">Watch the movie: first a <b>flat 2-D cartoon</b>, then the same loop in <b>3-D RGB space</b> — each dial becomes an axis (R, G, B). Similar colors form clumps. K-Means plants <b>K</b> flags, then loops: join the closest flag, move each flag to its team’s middle, repeat. The catch: “closest” needs a <b>ruler</b> — RGB or LAB.</p>
+        </div>
+        <div class="algo-steps" id="algoSteps">
+          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
+          <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the flags stop moving">
+            <span class="algo-loop-label">repeat this loop</span>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
+            <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
+          </div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
         </div>
       </div>
     </div>
@@ -1895,6 +1900,7 @@ function initAlgoDemo(){
   const cv=$('algoDemo'); if(!cv)return;
   const ctx=cv.getContext('2d');
   const W=cv.width, H=cv.height, K=3;
+  const S=W/640; // scale drawing so bigger canvas stays readable
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   let pts=[], centroids=[], labels=[], visibleMeans=0;
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
@@ -1948,7 +1954,7 @@ function initAlgoDemo(){
     const zr=-x*Math.sin(angle)+z*Math.cos(angle);
     const yr=y*0.92-zr*0.28;
     const depth=2.65+zr*0.55;
-    const sc=148/depth;
+    const sc=(148*S)/depth;
     return {sx:W*0.54+xr*sc*1.38, sy:H*0.56-yr*sc*1.18, depth:zr, sc};
   }
 
@@ -2105,11 +2111,11 @@ function initAlgoDemo(){
     const o=project(origin.r,origin.g,origin.b,angle);
     ends.forEach(([e,col,lab])=>{
       const p=project(e.r,e.g,e.b,angle);
-      ctx.strokeStyle=col; ctx.globalAlpha=0.55; ctx.lineWidth=2;
+      ctx.strokeStyle=col; ctx.globalAlpha=0.55; ctx.lineWidth=2.4*S;
       ctx.beginPath(); ctx.moveTo(o.sx,o.sy); ctx.lineTo(p.sx,p.sy); ctx.stroke();
       ctx.globalAlpha=0.9; ctx.fillStyle=col;
-      ctx.font='700 12px ui-monospace,monospace';
-      ctx.fillText(lab, p.sx+4, p.sy+4);
+      ctx.font=`700 ${Math.round(14*S)}px ui-monospace,monospace`;
+      ctx.fillText(lab, p.sx+4*S, p.sy+4*S);
     });
     ctx.globalAlpha=1;
   }
@@ -2164,8 +2170,9 @@ function initAlgoDemo(){
     if(dim==='2d' && phase!=='lift'){
       ctx.strokeStyle=lineCol();
       ctx.globalAlpha=0.45; ctx.lineWidth=1;
-      for(let x=40;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-      for(let y=40;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      const step=Math.round(40*S);
+      for(let x=step;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=step;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
       ctx.globalAlpha=1;
     }else{
       drawCubeHint(angle);
@@ -2175,7 +2182,7 @@ function initAlgoDemo(){
     // links
     if((phase==='assign'||phase==='update') && visibleMeans>0){
       ctx.save();
-      ctx.globalAlpha=0.14; ctx.lineWidth=1;
+      ctx.globalAlpha=0.14; ctx.lineWidth=1.25*S;
       for(let i=0;i<pts.length;i++){
         const k=labels[i]; if(k<0||k>=visibleMeans) continue;
         const a=screenPos(pts[i],angle,liftT);
@@ -2189,7 +2196,7 @@ function initAlgoDemo(){
     // trails
     for(const t of trails){
       ctx.save();
-      ctx.globalAlpha=t.a; ctx.strokeStyle=cols[t.k]; ctx.lineWidth=2;
+      ctx.globalAlpha=t.a; ctx.strokeStyle=cols[t.k]; ctx.lineWidth=2.4*S;
       ctx.beginPath(); ctx.moveTo(t.x0,t.y0); ctx.lineTo(t.x1,t.y1); ctx.stroke();
       ctx.restore();
       t.a*=0.92;
@@ -2204,14 +2211,15 @@ function initAlgoDemo(){
       const p=pts[o.i];
       const k=labels[o.i];
       const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
-      const rad=(assigned?5.6:5.0)*(dim==='3d'?clampv(0.75+o.sc*0.35,0.85,1.35):1);
+      const baseR=(assigned?7.2:6.4)*S;
+      const rad=baseR*(dim==='3d'?clampv(0.75+o.sc*0.35,0.85,1.35):1);
       ctx.beginPath();
       ctx.arc(o.sx, o.sy, rad, 0, 7);
       ctx.fillStyle=p.col;
       ctx.globalAlpha=0.92;
       ctx.fill();
       if(assigned){
-        ctx.lineWidth=2; ctx.strokeStyle=cols[k]; ctx.stroke();
+        ctx.lineWidth=2.4*S; ctx.strokeStyle=cols[k]; ctx.stroke();
       }
       ctx.globalAlpha=1;
     }
@@ -2225,24 +2233,24 @@ function initAlgoDemo(){
         const age=(performance.now()-t0)/380;
         scale=age<1?0.35+0.65*Math.min(1,age):1;
       }
-      const R=14*scale*(dim==='3d'?clampv(0.8+s.sc*0.3,0.85,1.25):1);
+      const R=18*S*scale*(dim==='3d'?clampv(0.8+s.sc*0.3,0.85,1.25):1);
       const ringCol = (dim==='3d' && c.col) ? c.col : cols[k];
-      ctx.beginPath(); ctx.arc(s.sx,s.sy,R+6,0,7);
+      ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
       ctx.fillStyle=ringCol; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
       ctx.beginPath(); ctx.arc(s.sx,s.sy,R,0,7);
-      ctx.lineWidth=3.5; ctx.strokeStyle=ringCol; ctx.stroke();
-      ctx.beginPath(); ctx.arc(s.sx,s.sy,3.8,0,7);
+      ctx.lineWidth=4.2*S; ctx.strokeStyle=ringCol; ctx.stroke();
+      ctx.beginPath(); ctx.arc(s.sx,s.sy,4.6*S,0,7);
       ctx.fillStyle=ringCol; ctx.fill();
-      ctx.font='700 11px ui-monospace,monospace';
+      ctx.font=`700 ${Math.round(13*S)}px ui-monospace,monospace`;
       ctx.fillStyle=ringCol;
-      ctx.fillText('μ'+(k+1), s.sx+R+4, s.sy-R+2);
+      ctx.fillText('μ'+(k+1), s.sx+R+5*S, s.sy-R+2);
     }
 
     if(dim==='3d' || phase==='lift'){
       ctx.fillStyle=inkMute();
-      ctx.font='600 11px ui-monospace,monospace';
+      ctx.font=`600 ${Math.round(13*S)}px ui-monospace,monospace`;
       ctx.globalAlpha=0.75;
-      ctx.fillText('RGB cube', 14, H-14);
+      ctx.fillText('RGB cube', 16*S, H-16*S);
       ctx.globalAlpha=1;
     }
   }
@@ -2354,7 +2362,7 @@ function initAlgoDemo(){
           }
         }
         step++;
-        const done = dim==='3d' ? (mv<40 || step>=7) : (mv<2.2 || step>=8);
+        const done = dim==='3d' ? (mv<40 || step>=7) : (mv<2.2*S*S || step>=8);
         if(done){
           phase='converge'; t0=now; setPhaseUI('converge');
         }else{
