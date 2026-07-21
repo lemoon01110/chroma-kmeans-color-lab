@@ -1,32 +1,38 @@
-# Opengate Week 3 Day 1 — slide assets
+# Opengate Week 3 Day 1 — slides & assets
 
-Google Slides won’t play a live embed of the lab, and some slide themes choke on animated GIFs. These files are drop-ins for **W3D1**.
+## The slide deck (use this)
 
-## Files
+**`Opengate-W3D1-Two-Kinds-of-Model.pptx`**
 
-| File | Use on |
+Also copied to: `~/Downloads/Opengate-W3D1-Two-Kinds-of-Model.pptx`
+
+- Open in **PowerPoint**, **Keynote**, or **File → Import** into Google Slides
+- Animated GIF on the hook slide plays in PowerPoint/Keynote; Google Slides sometimes freezes GIFs — re-upload `kmeans-dots-rings.gif` onto that slide if needed
+
+## Flow (19 slides)
+
+1. Title — two kinds of model  
+2. Week map  
+3. Hook — colors with no labels (animation)  
+4. Bridge — learned structure without answers  
+5. What is a model?  
+6. Write this down  
+7. AI ⊃ ML ⊃ DL  
+8. Supervised vs unsupervised fork  
+9. Call it out  
+10. Dots + distance (student & pixel→RGB)  
+11–13. KNN + floor activity  
+14–16. K-Means steps + worked example  
+17. Live Chroma Lab URL  
+18. Partner work  
+19. Wrap + exit ticket  
+
+## Extra media
+
+| File | Notes |
 | --- | --- |
-| `kmeans-dots-rings.gif` | **Slide 3** (“Where did these colors come from?”) — dots = pixels, rings = colors being discovered |
-| `kmeans-loop.gif` | Same idea with the stage chrome (title + live caption) if you want more context |
-| `slide3-still.png` | Fallback still if a GIF won’t insert cleanly |
+| `kmeans-dots-rings.gif` | Hook animation (dots + rings) |
+| `kmeans-loop.gif` | Same with stage chrome |
+| `slide3-still.png` | Fallback still |
 
-## Live tool (Slide 14)
-
-Link (open on camper laptops — don’t fight the embed):
-
-https://lemoon01110.github.io/chroma-kmeans-color-lab/
-
-Tip for facilitation: put that URL + a QR on the slide, then say “leave Slides, open the lab.”
-
-## Insert a GIF in Google Slides
-
-1. **Insert → Image → Upload from computer**
-2. Pick `kmeans-dots-rings.gif`
-3. Resize; leave “crop” alone so animation isn’t clipped
-4. In **File → Version history**, if the GIF looks frozen, re-upload — Slides sometimes strips animation on paste-from-docs
-
-If animation still won’t play: keep the still on the slide and project the live lab on a second screen / second tab.
-
-## Vocab lock (matches the deck)
-
-Guess → Assign → Update → Converge
+Live lab: https://lemoon01110.github.io/chroma-kmeans-color-lab/
