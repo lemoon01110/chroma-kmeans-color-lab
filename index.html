@@ -341,21 +341,28 @@ input[type=range].slider::-moz-range-thumb{
 .seg button{font:inherit;font-size:12px;font-weight:500;border:0;background:transparent;color:var(--ink-mute);padding:5px 11px;border-radius:6px;cursor:pointer;transition:.15s}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 
-.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;padding:var(--pad)}
+.palette{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:12px;padding:var(--pad);
+}
 .swatch{
   border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);cursor:pointer;
   transition:transform .15s,box-shadow .15s,border-color .15s;text-align:left;font:inherit;color:var(--ink);
-  position:relative;animation:swin .4s both;
+  position:relative;animation:swin .4s both;display:flex;flex-direction:column;min-width:0;width:100%;
 }
 @keyframes swin{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 .swatch:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--line-strong)}
-.swatch .chip{height:64px;position:relative}
-.swatch .cov{
-  position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.75);mix-blend-mode:overlay;
+.swatch .swatch-chip{
+  display:block;width:100%;height:72px;position:relative;flex:none;
+  border:0;border-radius:0;padding:0;margin:0;
 }
-.swatch .meta{padding:8px 10px}
-.swatch .hex{font-family:var(--font-mono);font-size:12.5px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
-.swatch .pct{font-size:11px;color:var(--ink-mute);margin-top:2px;font-family:var(--font-mono)}
+.swatch .cov{
+  position:absolute;left:0;bottom:0;height:5px;background:rgba(255,255,255,.8);mix-blend-mode:soft-light;
+}
+.swatch .meta{padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.swatch .hex{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.02em}
+.swatch .pct{font-size:11px;color:var(--ink-mute);font-family:var(--font-mono)}
 .swatch .copied{
   position:absolute;inset:0;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);
   font-weight:600;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s;letter-spacing:.04em;
@@ -483,12 +490,12 @@ footer.foot a{color:var(--accent);text-decoration:none}
 .mission-meta{
   display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;
 }
-.chip{
+.mchip{
   display:inline-flex;align-items:center;gap:6px;
   font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;
   padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink-mute);background:var(--surface-2);
 }
-.chip strong{color:var(--ink);font-weight:600}
+.mchip strong{color:var(--ink);font-weight:600}
 .mission-tip{
   font-size:13.5px;line-height:1.5;color:var(--ink);
   border-left:3px solid var(--accent);background:var(--accent-soft);
@@ -528,6 +535,33 @@ footer.foot a{color:var(--accent);text-decoration:none}
 .algo-step p{margin:0;font-size:13.5px;line-height:1.4;color:var(--ink-mute)}
 .algo-step.active p{color:var(--ink)}
 .algo-step strong{color:var(--ink)}
+/* visual for-loop around Assign + Update */
+.algo-loop{
+  position:relative;
+  margin:2px 0;
+  padding:8px 10px 8px 14px;
+  border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--accent) 5%,transparent);
+  display:grid;gap:6px;
+}
+.algo-loop-label{
+  position:absolute;top:-9px;left:14px;padding:0 8px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);background:var(--surface);font-weight:700;
+}
+.algo-loop.active{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+}
+.algo-loop-until{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);
+  padding:2px 8px 2px 38px;
+}
+.algo-loop-until .arrow{
+  color:var(--accent);font-weight:700;letter-spacing:.02em;
+}
 .algo-stage{
   padding:var(--pad);display:flex;flex-direction:column;gap:10px;background:var(--surface-2);
 }
@@ -617,9 +651,13 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <p class="lede">The algorithm does <b>not</b> know which colors matter. It starts with a <b>random guess</b> for where those homes should be, then improves the guess with a simple loop you can watch on the right.</p>
         <div class="algo-steps" id="algoSteps">
           <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Place K markers at random in the cloud. These first positions are almost always wrong — that’s fine.</p></div>
-          <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Each point joins whichever marker is closest. The cloud splits into K colored groups.</p></div>
-          <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Move each marker to the average position of the points that joined it — the true center of its group.</p></div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> Repeat Assign → Update. When the markers barely move, stop. Those K positions are your palette.</p></div>
+          <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the markers stop moving">
+            <span class="algo-loop-label">for each iteration</span>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Each point joins whichever marker is closest. The cloud splits into K colored groups.</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Move each marker to the average position of the points that joined it — the true center of its group.</p></div>
+            <div class="algo-loop-until"><span class="arrow">↻ while</span> markers still move more than a tiny threshold</div>
+          </div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> Exit the loop. The final marker positions are your palette — then every pixel is repainted with its group’s color.</p></div>
         </div>
       </div>
       <div class="algo-stage">
@@ -1303,11 +1341,11 @@ function buildPalette(){
     el.setAttribute('aria-label',`Color ${it.hex}, ${(it.cov*100).toFixed(1)} percent of image. Click to copy.`);
     const textColor = it.lum>0.42 ? '#141210' : '#ffffff';
     el.innerHTML=`
-      <div class="chip" style="background:${it.hex}">
+      <div class="swatch-chip" style="background:${it.hex}">
         <div class="cov" style="width:${Math.max(3,it.cov*100)}%"></div>
       </div>
       <div class="meta">
-        <div class="hex" style="">${it.hex}</div>
+        <div class="hex">${it.hex}</div>
         <div class="pct">${(it.cov*100).toFixed(1)}% of image</div>
       </div>
       <div class="copied">Copied ✓</div>`;
@@ -1791,6 +1829,8 @@ function initAlgoDemo(){
       const map={seed:'guess', guess:'guess', assign:'assign', update:'update', converge:'converge'};
       s.classList.toggle('active', map[p]===ph);
     });
+    const loop=$('algoLoop');
+    if(loop) loop.classList.toggle('active', p==='assign' || p==='update');
     // Mirror onto the sticky vocab strip only before a photo is loaded —
     // once the real clustering UI owns those pills, leave them alone.
     if(state.img) return;
@@ -2108,7 +2148,7 @@ function renderMissionChrome(){
   else{ tip.textContent=''; tip.classList.add('hidden'); }
   const meta=$('missionMeta'); meta.innerHTML='';
   (m.chips||[]).forEach(([k,v])=>{
-    const s=document.createElement('span'); s.className='chip';
+    const s=document.createElement('span'); s.className='mchip';
     s.innerHTML=`${k} <strong>${v}</strong>`;
     meta.appendChild(s);
   });
