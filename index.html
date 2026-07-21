@@ -629,9 +629,9 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== MASTHEAD ===================== -->
   <header class="masthead reveal">
     <div class="brand">
-      <span class="eyebrow">Unsupervised Learning · Lab</span>
+      <span class="eyebrow">A computer finds patterns · by itself</span>
       <h1>Chroma <em>Lab</em></h1>
-      <p class="tagline">A photo is a cloud of pixels in color space. K-Means plants a few random markers in that cloud, then repeatedly pulls them toward the centers of nearby pixels until the groups stop changing — those markers become the palette.</p>
+      <p class="tagline">A photo is made of tiny colored dots called pixels. This site shows how a computer program called <b>K-Means</b> picks a small set of colors that still look like the picture — by guessing, grouping, and fixing its guess over and over.</p>
     </div>
     <div class="masthead-right">
       <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
@@ -646,31 +646,31 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <section class="card algo reveal" id="algoIntro" style="animation-delay:.02s">
     <div class="algo-grid">
       <div class="algo-copy">
-        <h2>What K-Means is doing</h2>
-        <p class="lede">Think of every pixel as a <b>point</b> with three coordinates (red, green, blue). A whole photo is a messy cloud of millions of those points. Clustering means: find <b>K</b> representative spots in the cloud so every point has a nearby “home.”</p>
-        <p class="lede">The algorithm does <b>not</b> know which colors matter. It starts with a <b>random guess</b> for where those homes should be, then improves the guess with a simple loop you can watch on the right.</p>
+        <h2>The big idea (watch the movie →)</h2>
+        <p class="lede">Imagine dumping all the pixels from a photo onto a table as colored dots. Similar colors land near each other and make clumps. K-Means tries to put a flag in the middle of each clump.</p>
+        <p class="lede">It does <b>not</b> know the “right” answer. It starts with a <b>wild guess</b>, then runs a short loop until the flags stop moving. Those final flag colors are the palette.</p>
         <div class="algo-steps" id="algoSteps">
-          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Place K markers at random in the cloud. These first positions are almost always wrong — that’s fine.</p></div>
-          <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the markers stop moving">
-            <span class="algo-loop-label">for each iteration</span>
-            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Each point joins whichever marker is closest. The cloud splits into K colored groups.</p></div>
-            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Move each marker to the average position of the points that joined it — the true center of its group.</p></div>
-            <div class="algo-loop-until"><span class="arrow">↻ while</span> markers still move more than a tiny threshold</div>
+          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places. First try is usually messy — that’s OK.</p></div>
+          <div class="algo-loop" id="algoLoop" aria-label="Repeat group and move until the flags stop moving">
+            <span class="algo-loop-label">repeat this loop</span>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Group (Assign).</strong> Every dot joins the closest flag. Now you have K teams of colors.</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Move (Update).</strong> Slide each flag to the middle of its team — like finding the average color of that group.</p></div>
+            <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
           </div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> Exit the loop. The final marker positions are your palette — then every pixel is repainted with its group’s color.</p></div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Done (Converge).</strong> When flags barely move, stop. Paint every pixel with its team’s flag color. That’s the simplified picture.</p></div>
         </div>
       </div>
       <div class="algo-stage">
         <div class="algo-stage-head">
-          <span class="algo-stage-title">Live sketch · same loop as your photo, flattened to 2-D</span>
-          <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Building a cloud of pixels…</span></span>
+          <span class="algo-stage-title">Cartoon version · 3 flags on a flat table</span>
+          <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Spreading out a cloud of dots…</span></span>
         </div>
         <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation of K-Means: a cloud of points appears, random markers drop in, points join the nearest marker, markers slide to group centers, then the loop restarts."></canvas>
+          <canvas id="algoDemo" width="640" height="400" role="img" aria-label="Animation: dots appear, random flags drop in, dots join the nearest flag, flags slide to the middle of their groups, then it starts over."></canvas>
         </div>
         <div class="algo-legend">
-          <span><span class="d"></span> small dot = one pixel (a point in color space)</span>
-          <span><span class="r"></span> ring μ = a mean (a candidate palette color)</span>
+          <span><span class="d"></span> small dot = one pixel</span>
+          <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
         </div>
       </div>
     </div>
@@ -680,8 +680,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <section class="card lesson reveal" id="lessonCard" style="animation-delay:.03s">
     <div class="lesson-head">
       <div class="lede">
-        <h2>Try it on a photo</h2>
-        <span class="control-desc">Each demo loads a sample image and the settings that make one idea obvious. Skim the note, watch the image change, then tweak K yourself.</span>
+        <h2>Try it on a real photo</h2>
+        <span class="control-desc">Pick a demo. Each one loads a picture and settings that make one idea easy to see. Read the note, watch what changes, then try moving the K slider.</span>
       </div>
       <div class="mission-tabs" role="tablist" aria-label="Lab missions" id="missionTabs"></div>
     </div>
@@ -703,21 +703,21 @@ footer.foot a{color:var(--accent);text-decoration:none}
   </section>
 
   <!-- Persistent vocabulary / phase strip -->
-  <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="K-Means vocabulary">
+  <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="Word bank">
     <div class="vocab-terms">
-      <span class="vt"><span><b>point</b><span class="eq">=</span>one pixel</span><span class="why">a location in color space</span></span>
-      <span class="vt"><span><b>mean</b><span class="eq">=</span>a marker / palette color</span><span class="why">the center of a group</span></span>
-      <span class="vt"><span><b>distance</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span><span class="why">how “near” is measured</span></span>
-      <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors allowed</span><span class="why">how many means exist</span></span>
+      <span class="vt"><span><b>pixel</b><span class="eq">=</span>one tiny colored square</span><span class="why">the building block of a photo</span></span>
+      <span class="vt"><span><b>flag / mean</b><span class="eq">=</span>one chosen color</span><span class="why">stands for a whole group</span></span>
+      <span class="vt"><span><b>near</b><span class="eq">=</span>measured in <span id="vocabDistance">RGB</span></span><span class="why">the “ruler” for closeness</span></span>
+      <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors max</span><span class="why">how many flags you allow</span></span>
     </div>
     <div class="vocab-phase" aria-live="polite">
       <span class="phase-pill" id="phaseGuess">Guess</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseAssign">Assign</span>
+      <span class="phase-pill" id="phaseAssign">Group</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseUpdate">Update</span>
+      <span class="phase-pill" id="phaseUpdate">Move</span>
       <span class="phase-arrow" aria-hidden="true">→</span>
-      <span class="phase-pill" id="phaseConverge">Converge</span>
+      <span class="phase-pill" id="phaseConverge">Done</span>
     </div>
   </div>
 
@@ -727,7 +727,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <!-- STAGE -->
       <section class="card reveal" style="animation-delay:.05s" id="stageCard">
         <div class="card-head">
-          <h2>Your photo in color space</h2>
+          <h2>Your photo</h2>
           <div class="stage-tabs" role="tablist" aria-label="View mode">
             <button role="tab" id="tabSbs"    aria-selected="true"  aria-controls="viewSbs">Side&nbsp;by&nbsp;side</button>
             <button role="tab" id="tabCompare" aria-selected="false" aria-controls="viewCompare">Compare&nbsp;slider</button>
@@ -737,8 +737,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="stage-body">
           <!-- empty state / dropzone -->
           <div id="dropzone" class="dropzone">
-            <h3>Load any photo to run K-Means on real pixels</h3>
-            <p>Or use a demo above. Processing stays in your browser — nothing is uploaded.</p>
+            <h3>Add a photo to try the idea</h3>
+            <p>Or tap a demo above. Your picture stays on this device — we never upload it.</p>
             <div class="dz-actions">
               <button class="btn primary" id="pickBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -752,11 +752,11 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <!-- side by side -->
           <div id="viewSbs" class="sbs hidden" role="tabpanel" aria-labelledby="tabSbs">
             <div class="pane">
-              <div class="plabel"><span class="tag orig"></span> Original pixels <span id="origDims" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
+              <div class="plabel"><span class="tag orig"></span> Before <span id="origDims" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
               <div class="viewport"><canvas id="canvasOrig"></canvas></div>
             </div>
             <div class="pane">
-              <div class="plabel"><span class="tag red"></span> After clustering · only <span id="redK" style="color:var(--accent);font-weight:700">&nbsp;K</span> colors</div>
+              <div class="plabel"><span class="tag red"></span> After · only <span id="redK" style="color:var(--accent);font-weight:700">&nbsp;K</span> colors</div>
               <div class="viewport"><canvas id="canvasReduced"></canvas></div>
             </div>
           </div>
@@ -779,7 +779,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <div style="display:flex;gap:8px;align-items:center">
               <span class="computing-note hidden" id="computingNote">
                 <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
-                running Assign → Update…
+                grouping colors…
               </span>
               <button class="btn small" id="changeImgBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -794,8 +794,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <section class="card reveal" id="paletteCard" style="animation-delay:.1s;margin-top:var(--gap)">
         <div class="pal-toolbar">
           <div class="k-label-wrap">
-            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">The palette K-Means found</h2>
-            <span class="control-desc">Each swatch is one final mean — the center of a group of pixels. Coverage % is how much of the photo landed in that group. Click a swatch to copy its hex.</span>
+            <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Colors the computer picked</h2>
+            <span class="control-desc">Each box is one final flag color. The % says how much of the photo joined that team. Click a box to copy its code.</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
@@ -806,7 +806,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
           </div>
         </div>
         <div class="palette" id="palette" aria-live="polite">
-          <p style="color:var(--ink-mute);font-size:14px;padding:8px;line-height:1.45">Once a photo is clustered, the settled means show up here as a palette. Nobody picked these colors by hand — the loop discovered them.</p>
+          <p style="color:var(--ink-mute);font-size:14px;padding:8px;line-height:1.45">After a photo finishes, the flag colors show up here. A person did not choose them — the loop found them.</p>
         </div>
       </section>
 
@@ -814,8 +814,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <section class="card reveal explainer" style="animation-delay:.15s;margin-top:var(--gap)">
         <details open>
           <summary class="card-head" style="cursor:pointer;list-style:none">
-            <h2>Color space &amp; the loop <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— deeper notes</span></h2>
-            <span class="badge">read me</span>
+            <h2>More detail <span style="font-weight:400;color:var(--ink-mute);font-size:13px;font-family:var(--font-sans)">— if you want it</span></h2>
+            <span class="badge">optional</span>
           </summary>
           <div class="card-pad" style="padding-top:6px">
             <div class="rgb-explain">
@@ -838,24 +838,24 @@ footer.foot a{color:var(--accent);text-decoration:none}
                 <circle cx="94" cy="50" r="4" fill="#b8860b"/>
                 <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
               </svg>
-              <div class="txt">Screens store color as <b>R</b>, <b>G</b>, <b>B</b> — three numbers from 0–255. Plot those as axes and every pixel becomes a single point. A photo is a dense cloud. K-Means’ only job is to park <b>K</b> markers inside that cloud and claim every point for the nearest marker.</div>
+              <div class="txt">Every screen color is three numbers: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue (0 to 255). If you pretend those are left/right, up/down, and depth, each pixel is a spot in space. A photo is a huge cloud of spots. K-Means plants <b>K</b> flags in that cloud and gives every spot to the nearest flag.</div>
             </div>
 
             <div class="cols">
               <div>
                 <div class="steps">
-                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Choose K starting marker positions (random, or smarter with k-means++).</p></div>
-                  <div class="step"><span class="n">2</span><p><strong>Assign.</strong> For each pixel, measure distance to every marker; join the closest one. That carves the cloud into K groups (clusters).</p></div>
-                  <div class="step"><span class="n">3</span><p><strong>Update.</strong> Replace each marker with the average color of the pixels that joined it. Empty groups get re-seeded so no color slot is wasted.</p></div>
-                  <div class="step"><span class="n">4</span><p><strong>Converge.</strong> Keep looping. When markers move less than a tiny threshold, stop — you’ve found a local solution.</p></div>
+                  <div class="step"><span class="n">1</span><p><strong>Guess.</strong> Put K flags down (random, or a smarter spread called k-means++).</p></div>
+                  <div class="step"><span class="n">2</span><p><strong>Group.</strong> For each pixel, find the closest flag and join that team.</p></div>
+                  <div class="step"><span class="n">3</span><p><strong>Move.</strong> Put each flag in the “middle” of its team (the average color). Empty teams get a new random flag.</p></div>
+                  <div class="step"><span class="n">4</span><p><strong>Done.</strong> Repeat Group → Move until the flags almost stop sliding.</p></div>
                 </div>
-                <p>Finally we <strong>repaint</strong> every pixel with its group’s marker color. The image now uses only K colors, and the markers are the palette.</p>
+                <p>Last step: <strong>repaint</strong> every pixel with its team’s flag color. Now the picture only uses K colors.</p>
                 <div class="callout">
-                  No human labeled “sky” or “leaf.” The computer only followed a distance rule — that’s why this is called <strong>unsupervised</strong> learning. Different random starts can settle in different places, so two runs are not guaranteed to match. That’s a feature of the math, not a bug in the app.
+                  Nobody told the computer “this is sky” or “this is a leaf.” It only used a closeness rule. Grown-ups call that <strong>unsupervised learning</strong> — learning without labels. Start from a different random Guess and you might get a slightly different palette. That’s normal!
                 </div>
               </div>
               <div class="callout" style="align-self:start">
-                The looping sketch at the top is this exact procedure on a toy 2-D cloud. Your photo does the same thing in 3-D, with far more points. Play the sidebar animation to see Assign → Update rewrite the real image frame by frame.
+                The cartoon at the top is the same loop on a flat table. Your photo does it with millions of dots in 3-D. Hit <b>Play</b> on the right to watch Group → Move change the real picture step by step.
               </div>
             </div>
           </div>
@@ -870,8 +870,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="card-pad k-block">
           <div class="k-top">
             <div class="k-label-wrap">
-              <span class="k-label">How many colors · <span aria-hidden="true" style="color:var(--ink-mute);font-weight:400">K</span></span>
-              <span class="control-desc k-desc">K is the number of means the algorithm is allowed to keep. Small K forces big groups → bold, poster-like images. Large K keeps more nuance → closer to the original.</span>
+              <span class="k-label">How many colors? · <span aria-hidden="true" style="color:var(--ink-mute);font-weight:400">K</span></span>
+              <span class="control-desc k-desc"><b>K</b> = how many flags (colors) the computer may keep. Small K = big teams = a bold, poster look. Big K = more detail = closer to the real photo.</span>
             </div>
             <span class="k-value" id="kValue">8<span class="unit">colors</span></span>
           </div>
@@ -883,18 +883,18 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <!-- ASSIGN → UPDATE → CONVERGE -->
       <section class="card reveal" style="animation-delay:.12s">
         <div class="card-head">
-          <h2>Replay the loop</h2>
+          <h2>Watch the loop again</h2>
           <span class="badge" id="convBadge">idle</span>
         </div>
         <div class="card-pad learn">
           <div class="phase-rail" aria-hidden="true">
-            <span class="phase-pill" id="learnPhaseAssign">Assign</span>
+            <span class="phase-pill" id="learnPhaseAssign">Group</span>
             <span class="phase-arrow">→</span>
-            <span class="phase-pill" id="learnPhaseUpdate">Update</span>
+            <span class="phase-pill" id="learnPhaseUpdate">Move</span>
             <span class="phase-arrow">→</span>
-            <span class="phase-pill" id="learnPhaseConverge">Converge</span>
+            <span class="phase-pill" id="learnPhaseConverge">Done</span>
           </div>
-          <p class="control-desc" style="margin-bottom:2px">After clustering finishes we keep every intermediate step. <b>Play</b> walks through them: first pixels join markers (Assign), then markers slide (Update). Watch the reduced image get sharper as the groups settle.</p>
+          <p class="control-desc" style="margin-bottom:2px">We saved every step. Press <b>Play</b> to see dots join flags (Group), then flags slide to the middle (Move). The simplified picture gets clearer as it goes.</p>
           <div class="learn-status">
             <span class="iter-readout">iteration <b id="iterNum">0</b> <span id="iterMax" style="opacity:.6"></span></span>
             <span class="control-desc" id="phaseCaption" style="margin:0">idle</span>
@@ -922,24 +922,24 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <summary>
             <span style="display:flex;align-items:center;gap:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
-              Experiments &amp; options
+              Experiments
             </span>
             <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="m9 6 6 6-6 6"/></svg>
           </summary>
           <div class="acc-body">
             <div class="exp-row">
-              <span class="lbl">Shortcuts that change the story</span>
+              <span class="lbl">Quick tries</span>
               <div class="exp-btns">
-                <button class="btn small" id="expPosterize" title="Force only 4 means">Force K=4</button>
-                <button class="btn small" id="expRandom" title="Random init + new seed">New random start</button>
-                <button class="btn small" id="expLab" title="Switch color space to LAB">Measure in LAB</button>
+                <button class="btn small" id="expPosterize" title="Only allow 4 colors">Only 4 colors</button>
+                <button class="btn small" id="expRandom" title="New random start">New random start</button>
+                <button class="btn small" id="expLab" title="Use LAB ruler">Use LAB ruler</button>
               </div>
             </div>
             <div class="divider"></div>
             <div class="opt-row">
               <div class="lblwrap">
-                <span class="lbl">Color space (the distance rule)</span>
-                <div class="control-desc"><b>RGB</b> uses the raw channel numbers — fast and simple, but “close in RGB” is not always “looks similar.” <b>LAB</b> remaps color so equal steps are closer to how people see differences; groups often look cleaner.</div>
+                <span class="lbl">How we measure “near”</span>
+                <div class="control-desc"><b>RGB</b> uses the three screen numbers as-is — simple. <b>LAB</b> is a different ruler that matches human eyes a bit better, so teams often look nicer.</div>
               </div>
               <div class="segsm" role="group" aria-label="Color space">
                 <button id="csRGB" aria-pressed="true">RGB</button>
@@ -948,8 +948,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
             </div>
             <div class="opt-row">
               <div class="lblwrap">
-                <span class="lbl">Where the first markers land</span>
-                <div class="control-desc"><b>Random</b> scatters the K guesses — dramatic early frames, more chance of odd local solutions. <b>k-means++</b> spreads the first guesses apart on purpose, so runs are usually steadier.</div>
+                <span class="lbl">Where the first flags land</span>
+                <div class="control-desc"><b>Random</b> = throw flags anywhere (wild early steps). <b>k-means++</b> = spread the first flags apart on purpose (usually calmer results).</div>
               </div>
               <div class="segsm" role="group" aria-label="Initialization method">
                 <button id="initPP"     aria-pressed="true">k-means++</button>
@@ -958,12 +958,12 @@ footer.foot a{color:var(--accent);text-decoration:none}
             </div>
             <div class="opt-row" style="border-bottom:0">
               <div class="lblwrap">
-                <span class="lbl">Re-seed the guess</span>
-                <div class="control-desc">Keep the same photo and K, but draw a new random starting set of markers. If the palette changes, you’ve seen that unsupervised solutions aren’t unique.</div>
+                <span class="lbl">Try a new Guess</span>
+                <div class="control-desc">Same photo, same K, but brand-new random flag starts. If the colors change, you’ve seen that there isn’t only one “right” answer.</div>
               </div>
               <button class="btn small" id="reseedBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-                Re-seed
+                New Guess
               </button>
             </div>
           </div>
@@ -972,7 +972,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- DOWNLOADS -->
       <section class="card reveal" style="animation-delay:.2s">
-        <div class="card-head"><h2>Take the palette with you</h2><span class="sub">you discovered these colors</span></div>
+        <div class="card-head"><h2>Save your colors</h2><span class="sub">the computer found these</span></div>
         <div class="card-pad">
           <div class="dl-grid">
             <button class="btn small" id="dlPng" disabled>
@@ -998,8 +998,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
   </div>
 
   <footer class="foot">
-    <span>Chroma Lab teaches K-Means by running it on pixels in your browser — <strong>no uploads, works offline</strong>.</span>
-    <span>The worker source at the bottom of this file comments every Assign / Update step.</span>
+    <span>Chroma Lab shows how computers group colors — <strong>everything stays on your device</strong>.</span>
+    <span>Curious coders: the loop is explained in comments at the bottom of this page’s source.</span>
   </footer>
 </div>
 
@@ -1769,11 +1769,11 @@ function initAlgoDemo(){
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
 
   const phaseCopy={
-    seed:'First: a cloud of unlabeled pixels…',
-    guess:'Guess — planting random markers (μ)…',
-    assign:'Assign — each pixel joins its nearest μ',
-    update:'Update — each μ slides to its group’s center',
-    converge:'Converged — markers stopped · new random start next'
+    seed:'First we make a cloud of dots…',
+    guess:'Guess — dropping random flags…',
+    assign:'Group — every dot joins the closest flag',
+    update:'Move — each flag slides to its team’s middle',
+    converge:'Done — flags stopped · starting a new Guess…'
   };
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
@@ -2036,42 +2036,42 @@ const MISSIONS=[
   {
     id:'posterize',
     n:'1',
-    tab:'Posterize',
-    title:'Too few colors (small K)',
-    goal:'We load the Dusk sample with K=4. Smooth sky gradients need many nearby colors; with only four means, whole ranges of orange and purple get collapsed into flat bands — classic posterization.',
-    tip:'After it settles, drag K upward. Each new mean can claim part of a gradient, so banding softens. That is the tradeoff K always makes: simplicity versus fidelity.',
+    tab:'Few colors',
+    title:'What if K is too small?',
+    goal:'We open the Dusk picture with only K=4 colors. Smooth sunsets need lots of close oranges and purples. With just four flags, big stretches get smashed into flat blocks — like a poster.',
+    tip:'When it finishes, drag K higher. Extra flags can cover parts of the gradient, so the bands get softer. That’s the trade: fewer colors = simpler, more colors = more detail.',
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['photo','Dusk'],['K','4'],['watch for','flat bands']]
+    chips:[['photo','Dusk'],['K','4'],['look for','flat bands']]
   },
   {
     id:'distance',
     n:'2',
-    tab:'Distance',
-    title:'“Near” depends on the ruler',
-    goal:'Bloom runs in LAB space. K-Means only groups by distance — change the distance rule and you change which pixels feel “near,” so the palette can shift even when K stays the same.',
-    tip:'Flip Color space to RGB on this same photo. If greens or pinks look muddier, you’ve seen why people often prefer LAB for perceptual clustering.',
+    tab:'Nearness',
+    title:'“Close” depends on the ruler',
+    goal:'Bloom uses the LAB ruler. K-Means only cares about what “near” means. Change the ruler and different pixels can end up on the same team — even if K stays the same.',
+    tip:'Switch “How we measure near” to RGB on this same photo. If some colors look muddier, you’ve seen why LAB is often nicer for people-looking eyes.',
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
-    chips:[['photo','Bloom'],['distance','LAB'],['compare','switch to RGB']]
+    chips:[['photo','Bloom'],['ruler','LAB'],['try','switch to RGB']]
   },
   {
     id:'random',
     n:'3',
-    tab:'Lucky guess',
-    title:'Random starts, different endings',
-    goal:'Grove uses random initialization. The first marker positions are a luck-of-the-draw Guess. Hit Re-seed a few times — different starts can converge to different green palettes.',
-    tip:'That is the unsupervised punchline: the math finds a local solution, not a single global “correct” palette. Switch to k-means++ if you want steadier starts.',
+    tab:'Lucky start',
+    title:'Different guesses, different endings',
+    goal:'Grove starts with random flags. Hit New Guess a few times. Same trees, same K — but the greens can settle differently because the first throw was luck.',
+    tip:'That’s the big lesson: the computer finds a good answer, not the only answer. Use k-means++ if you want calmer, more repeatable starts.',
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
-    chips:[['photo','Grove'],['init','random'],['try','Re-seed']]
+    chips:[['photo','Grove'],['start','random'],['try','New Guess']]
   },
   {
     id:'free',
     n:'∞',
-    tab:'Free lab',
-    title:'Open sandbox',
-    goal:'Drop your own photo. Choose K, pick RGB or LAB, watch Assign → Update in the sidebar, then export the palette the loop discovered.',
-    tip:'A useful habit: change only one setting at a time (K, or distance, or init) so you can see which knob caused the change.',
+    tab:'Free play',
+    title:'Your turn',
+    goal:'Drop any photo you like. Change K, try RGB or LAB, press Play to watch Group → Move, then save the colors if you want.',
+    tip:'Change one thing at a time (only K, or only the ruler) so you can tell what caused the change.',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['mode','sandbox'],['export','PNG · JSON · CSS']]
+    chips:[['mode','sandbox'],['save','PNG · CSS']]
   }
 ];
 
@@ -2093,30 +2093,29 @@ function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
   ['phaseGuess','phaseAssign','phaseUpdate','phaseConverge',
    'learnPhaseAssign','learnPhaseUpdate','learnPhaseConverge'].forEach(id=>set(id,''));
 
-  let caption='Load a photo (or a demo) to run the loop on real pixels';
+  let caption='Add a photo (or pick a demo) to run the loop';
   if(!hasHistory){
     set('phaseGuess','active');
   }else if(converged && atEnd && !playing){
     set('phaseGuess','done'); set('phaseAssign','done'); set('phaseUpdate','done'); set('phaseConverge','active');
     set('learnPhaseAssign','done'); set('learnPhaseUpdate','done'); set('learnPhaseConverge','active');
-    caption='Converged — markers stopped moving; palette is final';
+    caption='Done — flags stopped moving; colors are final';
   }else if(playing){
-    // even frames emphasize Assign; odd emphasize Update (each history snap is post-assign)
     const assignBeat = (frame % 2) === 0;
     set('phaseGuess','done');
     set('phaseAssign', assignBeat?'active':'done');
     set('phaseUpdate', assignBeat?'done':'active');
     set('learnPhaseAssign', assignBeat?'active':'');
     set('learnPhaseUpdate', assignBeat?'':'active');
-    caption = assignBeat ? 'Assign — pixels join the nearest mean' : 'Update — means slide toward group averages';
+    caption = assignBeat ? 'Group — dots join the closest flag' : 'Move — flags slide to the middle of their teams';
   }else if(frame===0){
     set('phaseGuess','active'); set('phaseAssign','active');
     set('learnPhaseAssign','active');
-    caption='Iteration 1 — first assignment after the random guess';
+    caption='Round 1 — first grouping after the random Guess';
   }else{
     set('phaseGuess','done'); set('phaseAssign','active'); set('phaseUpdate','done');
     set('learnPhaseAssign','active'); set('learnPhaseUpdate','done');
-    caption='Paused mid-loop — Step or Play to continue';
+    caption='Paused — press Step or Play to keep going';
   }
   const cap=$('phaseCaption'); if(cap) cap.textContent=caption;
 }
