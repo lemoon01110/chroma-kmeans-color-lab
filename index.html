@@ -607,10 +607,38 @@ footer.foot a{color:var(--accent);text-decoration:none}
   position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
   background:var(--surface);
   aspect-ratio:16/9;
-  min-height:clamp(340px, 62vh, 720px);
-  max-height:min(72vh, 780px);
+  min-height:clamp(380px, 68vh, 820px);
+  max-height:min(78vh, 860px);
+  touch-action:none; /* allow drag-rotate / pinch-friendly */
+  cursor:grab;
 }
+.algo-canvas-wrap.is-dragging{cursor:grabbing}
 .algo-canvas-wrap canvas{display:block;width:100%;height:100%}
+.algo-zoom{
+  position:absolute;right:12px;bottom:12px;z-index:2;
+  display:flex;align-items:center;gap:4px;
+  padding:4px;border-radius:12px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:var(--shadow);
+}
+.algo-zoom button{
+  font:inherit;font-family:var(--font-mono);font-size:14px;font-weight:700;
+  min-width:36px;height:34px;padding:0 10px;border:0;border-radius:8px;
+  background:transparent;color:var(--ink);cursor:pointer;
+}
+.algo-zoom button:hover{background:var(--surface-2)}
+.algo-zoom #algoZoomLabel{
+  min-width:52px;text-align:center;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--ink-mute);
+}
+.algo-hint{
+  position:absolute;left:12px;bottom:12px;z-index:2;
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-mute);
+  padding:6px 10px;border-radius:8px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  border:1px solid var(--line);
+  pointer-events:none;
+}
 .algo-legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink-mute);flex-wrap:wrap}
 .algo-legend span{display:inline-flex;align-items:center;gap:7px}
 .algo-legend .dots{display:inline-flex;gap:4px;align-items:center}
@@ -694,8 +722,15 @@ footer.foot a{color:var(--accent);text-decoration:none}
           </div>
           <span class="algo-live" id="algoLive"><span class="pulse"></span><span id="algoPhase">Spreading out a cloud of dots…</span></span>
         </div>
-        <div class="algo-canvas-wrap">
-          <canvas id="algoDemo" width="1120" height="630" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes."></canvas>
+        <div class="algo-canvas-wrap" id="algoCanvasWrap">
+          <canvas id="algoDemo" width="1120" height="630" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes. Scroll to zoom, drag to spin."></canvas>
+          <div class="algo-hint" id="algoHint">Scroll to zoom · drag to spin</div>
+          <div class="algo-zoom" role="group" aria-label="Zoom">
+            <button type="button" id="algoZoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+            <span id="algoZoomLabel">100%</span>
+            <button type="button" id="algoZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+            <button type="button" id="algoZoomReset" title="Reset view" aria-label="Reset view">⟲</button>
+          </div>
         </div>
         <div class="algo-legend" id="algoLegend">
           <span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
@@ -1905,7 +1940,8 @@ function initAlgoDemo(){
   let pts=[], centroids=[], labels=[], visibleMeans=0;
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
   let dim='2d'; // '2d' | '3d'
-  let rot=0.55, liftT=0, forceDim=null; // forceDim: user clicked 2D/3D
+  let rotY=0.55, rotX=0.32, zoom=1, liftT=0, forceDim=null;
+  let autoSpin=true, dragging=false, lastPtr=null;
 
   const phaseCopy2d={
     seed:'2-D: a cloud of differently colored pixels…',
@@ -1947,15 +1983,31 @@ function initAlgoDemo(){
   function surfaceCol(){ return getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fbf9f4'; }
   function inkCol(){ return getComputedStyle(document.body).getPropertyValue('--ink').trim()||'#ece7dc'; }
 
-  function project(r,g,b, angle){
-    // Map RGB 0–255 → unit cube, rotate, perspective-project to canvas
-    const x=(r/255)*2-1, y=(g/255)*2-1, z=(b/255)*2-1;
-    const xr=x*Math.cos(angle)+z*Math.sin(angle);
-    const zr=-x*Math.sin(angle)+z*Math.cos(angle);
-    const yr=y*0.92-zr*0.28;
-    const depth=2.65+zr*0.55;
-    const sc=(148*S)/depth;
-    return {sx:W*0.54+xr*sc*1.38, sy:H*0.56-yr*sc*1.18, depth:zr, sc};
+  function project(r,g,b, angleY){
+    // Map RGB 0–255 → unit cube, rotate, perspective-project — fill most of the stage
+    let x=(r/255)*2-1, y=(g/255)*2-1, z=(b/255)*2-1;
+    // yaw
+    let xr=x*Math.cos(angleY)+z*Math.sin(angleY);
+    let zr=-x*Math.sin(angleY)+z*Math.cos(angleY);
+    // pitch
+    const yr=y*Math.cos(rotX)-zr*Math.sin(rotX);
+    zr=y*Math.sin(rotX)+zr*Math.cos(rotX);
+    const depth=2.2+zr*0.4;
+    const base=Math.min(W,H)*0.68*zoom; // fill most of the stage by default
+    const sc=base/depth;
+    return {sx:W*0.50+xr*sc, sy:H*0.50-yr*sc, depth:zr, sc};
+  }
+
+  function syncZoomUI(){
+    const lab=$('algoZoomLabel');
+    if(lab) lab.textContent=Math.round(zoom*100)+'%';
+    const hint=$('algoHint');
+    if(hint) hint.style.display = (dim==='3d' || phase==='lift') ? '' : 'none';
+  }
+
+  function setZoom(z){
+    zoom=clampv(z, 0.55, 3.2);
+    syncZoomUI();
   }
 
   function syncChrome(){
@@ -1974,6 +2026,7 @@ function initAlgoDemo(){
         : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> position = that pixel’s R, G, B recipe</span>
            <span><span class="r"></span> ring = a flag floating in the cube</span>`;
     }
+    syncZoomUI();
   }
 
   function setPhaseUI(p){
@@ -2071,24 +2124,24 @@ function initAlgoDemo(){
       }
       for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
     }else{
-      // Three RGB clumps (warm / teal / gold-ish) inside the cube
+      // Three RGB clumps pushed toward cube corners so the cloud fills the view
       const blobs=[
-        [210,70,55],[55,160,150],[200,160,45]
+        [235,55,40],[35,195,175],[230,185,30]
       ];
       blobs.forEach(([br,bg,bb])=>{
-        for(let i=0;i<24;i++){
-          const r=clampv(br+(Math.random()*2-1)*38,20,245);
-          const g=clampv(bg+(Math.random()*2-1)*38,20,245);
-          const b=clampv(bb+(Math.random()*2-1)*38,20,245);
+        for(let i=0;i<26;i++){
+          const r=clampv(br+(Math.random()*2-1)*42,15,245);
+          const g=clampv(bg+(Math.random()*2-1)*42,15,245);
+          const b=clampv(bb+(Math.random()*2-1)*42,15,245);
           const col=rgbToHex(r,g,b);
-          const p2=project(r,g,b,rot);
+          const p2=project(r,g,b,rotY);
           pts.push({r,g,b,col, x:p2.sx, y:p2.sy, x0:p2.sx, y0:p2.sy});
         }
       });
       for(let i=0;i<8;i++){
         const r=rand(40,220), g=rand(40,220), b=rand(40,220);
         const col=rgbToHex(r,g,b);
-        const p2=project(r,g,b,rot);
+        const p2=project(r,g,b,rotY);
         pts.push({r,g,b,col, x:p2.sx, y:p2.sy, x0:p2.sx, y0:p2.sy});
       }
       for(let k=0;k<K;k++){
@@ -2137,16 +2190,23 @@ function initAlgoDemo(){
     ctx.globalAlpha=1;
   }
 
+  function map2d(x,y){
+    // Zoom 2-D around canvas center so −/+ still works on the flat table
+    const cx=W*0.5, cy=H*0.5;
+    return {sx:cx+(x-cx)*zoom, sy:cy+(y-cy)*zoom, depth:0, sc:zoom};
+  }
+
   function screenPos(pt, angle, lift){
-    if(dim==='2d' && phase!=='lift') return {sx:pt.x, sy:pt.y, depth:0, sc:1};
+    if(dim==='2d' && phase!=='lift') return map2d(pt.x, pt.y);
     const p3=project(pt.r, pt.g, pt.b, angle);
     if(phase==='lift'){
       const t=lift;
+      const from=map2d(pt.x0, pt.y0);
       return {
-        sx:pt.x0+(p3.sx-pt.x0)*t,
-        sy:pt.y0+(p3.sy-pt.y0)*t,
+        sx:from.sx+(p3.sx-from.sx)*t,
+        sy:from.sy+(p3.sy-from.sy)*t,
         depth:p3.depth*t,
-        sc:1+(p3.sc/148-1)*t
+        sc:from.sc+(p3.sc-from.sc)*t
       };
     }
     return p3;
@@ -2155,15 +2215,14 @@ function initAlgoDemo(){
   function centroidScreen(c, angle){
     if(dim==='3d' || phase==='lift'){
       if(c.r!=null) return project(c.r,c.g,c.b,angle);
-      // during lift from 2d: invent RGB from theme later — 2d centroids only have x,y
-      return {sx:c.x, sy:c.y, depth:0, sc:1};
+      return map2d(c.x, c.y);
     }
-    return {sx:c.x, sy:c.y, depth:0, sc:1};
+    return map2d(c.x, c.y);
   }
 
   function draw(){
     const cols=themeCols();
-    const angle=rot;
+    const angle=rotY;
     ctx.fillStyle=surfaceCol();
     ctx.fillRect(0,0,W,H);
 
@@ -2211,8 +2270,8 @@ function initAlgoDemo(){
       const p=pts[o.i];
       const k=labels[o.i];
       const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
-      const baseR=(assigned?7.2:6.4)*S;
-      const rad=baseR*(dim==='3d'?clampv(0.75+o.sc*0.35,0.85,1.35):1);
+      const baseR=(assigned?9.5:8.2)*S*clampv(zoom,0.8,2.2);
+      const rad=baseR*(dim==='3d'?clampv(0.85+o.sc*0.002,0.9,1.6):1);
       ctx.beginPath();
       ctx.arc(o.sx, o.sy, rad, 0, 7);
       ctx.fillStyle=p.col;
@@ -2233,7 +2292,7 @@ function initAlgoDemo(){
         const age=(performance.now()-t0)/380;
         scale=age<1?0.35+0.65*Math.min(1,age):1;
       }
-      const R=18*S*scale*(dim==='3d'?clampv(0.8+s.sc*0.3,0.85,1.25):1);
+      const R=22*S*scale*clampv(zoom*0.55,0.85,1.8)*(dim==='3d'?1.05:1);
       const ringCol = (dim==='3d' && c.col) ? c.col : cols[k];
       ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
       ctx.fillStyle=ringCol; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
@@ -2277,14 +2336,18 @@ function initAlgoDemo(){
     }
     visibleMeans=K;
     liftT=0;
+    setZoom(1.55);
+    autoSpin=true;
     phase='lift';
     t0=performance.now();
     setPhaseUI('lift');
+    syncZoomUI();
   }
 
   function enter3dAfterLift(){
     dim='3d';
     forceDim=null;
+    setZoom(1.6);
     syncChrome();
     // re-randomize flags for a fresh Guess in 3-D so students see the loop again
     centroids=[];
@@ -2299,7 +2362,7 @@ function initAlgoDemo(){
   }
 
   function frame(now){
-    if(dim==='3d' || phase==='lift') rot += 0.0042;
+    if((dim==='3d' || phase==='lift') && autoSpin && !dragging) rotY += 0.0042;
     const dt=now-t0;
 
     if(phase==='lift'){
@@ -2325,7 +2388,7 @@ function initAlgoDemo(){
         moveFrom=centroids.map(c=>({...c}));
         moveTo=means();
         for(let k=0;k<K;k++){
-          const a=centroidScreen(moveFrom[k],rot), b=centroidScreen(moveTo[k],rot);
+          const a=centroidScreen(moveFrom[k],rotY), b=centroidScreen(moveTo[k],rotY);
           trails.push({k, x0:a.sx, y0:a.sy, x1:b.sx, y1:b.sy, a:0.55});
         }
         phase='update'; t0=now; setPhaseUI('update');
@@ -2387,6 +2450,8 @@ function initAlgoDemo(){
   function jumpTo(d){
     forceDim=d;
     cancelAnimationFrame(raf);
+    setZoom(d==='3d' ? 1.6 : 1);
+    rotY=0.55; rotX=0.32; autoSpin=true;
     resetCloud(d);
     if(reduced){
       visibleMeans=K; assign();
@@ -2401,7 +2466,56 @@ function initAlgoDemo(){
   $('algoMode2d')?.addEventListener('click', ()=>jumpTo('2d'));
   $('algoMode3d')?.addEventListener('click', ()=>jumpTo('3d'));
 
+  // Zoom + drag spin
+  $('algoZoomIn')?.addEventListener('click', ()=>setZoom(zoom*1.18));
+  $('algoZoomOut')?.addEventListener('click', ()=>setZoom(zoom/1.18));
+  $('algoZoomReset')?.addEventListener('click', ()=>{
+    setZoom(dim==='3d'?1.9:1);
+    rotY=0.55; rotX=0.32; autoSpin=true;
+  });
+
+  const wrap=$('algoCanvasWrap')||cv.parentElement;
+  wrap?.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const dir = e.deltaY>0 ? 1/1.12 : 1.12;
+    setZoom(zoom*dir);
+  }, {passive:false});
+
+  function ptrPos(e){
+    const r=cv.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return {x:src.clientX-r.left, y:src.clientY-r.top};
+  }
+  function onPtrDown(e){
+    if(e.target.closest && e.target.closest('.algo-zoom')) return;
+    dragging=true; autoSpin=false; lastPtr=ptrPos(e);
+    wrap?.classList.add('is-dragging');
+    try{ cv.setPointerCapture?.(e.pointerId); }catch(_){}
+  }
+  function onPtrMove(e){
+    if(!dragging || !lastPtr) return;
+    const p=ptrPos(e);
+    const dx=p.x-lastPtr.x, dy=p.y-lastPtr.y;
+    rotY += dx * 0.008;
+    rotX = clampv(rotX + dy * 0.006, -0.9, 1.05);
+    lastPtr=p;
+  }
+  function onPtrUp(){
+    dragging=false; lastPtr=null;
+    wrap?.classList.remove('is-dragging');
+    // resume gentle spin after a beat in 3-D
+    if(dim==='3d' || phase==='lift'){
+      clearTimeout(onPtrUp._t);
+      onPtrUp._t=setTimeout(()=>{ autoSpin=true; }, 1600);
+    }
+  }
+  cv.addEventListener('pointerdown', onPtrDown);
+  window.addEventListener('pointermove', onPtrMove);
+  window.addEventListener('pointerup', onPtrUp);
+  window.addEventListener('pointercancel', onPtrUp);
+
   resetCloud('2d');
+  setZoom(1);
   draw();
   if(reduced){
     visibleMeans=K; assign();
