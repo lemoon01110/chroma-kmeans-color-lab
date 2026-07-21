@@ -447,7 +447,7 @@ footer.foot{margin-top:clamp(28px,4vw,40px);padding-top:var(--pad-sm);border-top
 footer.foot a{color:var(--accent);text-decoration:none}
 
 /* ============================================================= *
- *  LEARNING RAIL — missions, vocab, predict/reveal               *
+ *  LEARNING RAIL — missions, vocab, phase strip                  *
  * ============================================================= */
 .lesson{margin-bottom:var(--gap)}
 .lesson-head{
@@ -489,35 +489,13 @@ footer.foot a{color:var(--accent);text-decoration:none}
   padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink-mute);background:var(--surface-2);
 }
 .chip strong{color:var(--ink);font-weight:600}
-
-.predict{
-  border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
-  padding:14px 16px;display:grid;gap:12px;
-}
-.predict.hidden{display:none!important}
-.predict-q{font-size:14px;font-weight:500;line-height:1.4}
-.predict-q .label{
-  display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--accent);margin-bottom:6px;
-}
-.predict-choices{display:flex;flex-direction:column;gap:8px}
-.predict-choice{
-  font:inherit;text-align:left;cursor:pointer;
-  border:1px solid var(--line);border-radius:11px;padding:10px 12px;
-  background:var(--surface);color:var(--ink);transition:.15s;
-}
-.predict-choice:hover{border-color:var(--line-strong);transform:translateY(-1px)}
-.predict-choice[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.predict-choice.correct{border-color:var(--good);background:color-mix(in srgb,var(--good) 10%,var(--surface))}
-.predict-choice.wrong{opacity:.55}
-.predict-reveal{
+.mission-tip{
   font-size:13.5px;line-height:1.5;color:var(--ink);
   border-left:3px solid var(--accent);background:var(--accent-soft);
   border-radius:0 10px 10px 0;padding:10px 12px;
 }
-.predict-reveal.hidden{display:none!important}
-.predict-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.lesson-nav{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.mission-tip.hidden{display:none!important}
+.lesson-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
 
 .vocab{
   position:sticky;top:0;z-index:25;
@@ -582,7 +560,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
     <div class="lesson-head">
       <div class="lede">
         <h2>Today’s lab</h2>
-        <span class="control-desc">Pick a mission — each one is built to surface a common misconception.</span>
+        <span class="control-desc">Pick a guided demo — each one sets up a photo and settings so you can see a specific idea play out.</span>
       </div>
       <div class="mission-tabs" role="tablist" aria-label="Lab missions" id="missionTabs"></div>
     </div>
@@ -595,24 +573,10 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <div class="mission-meta" id="missionMeta"></div>
         </div>
       </div>
-
-      <div class="predict" id="predictPanel">
-        <div>
-          <div class="predict-q">
-            <span class="label">Predict</span>
-            <div id="predictQuestion">Before you stare at the result: what will happen to the orange glow?</div>
-          </div>
-        </div>
-        <div class="predict-choices" id="predictChoices" role="group" aria-label="Prediction choices"></div>
-        <div class="predict-reveal hidden" id="predictReveal" role="status"></div>
-        <div class="predict-actions">
-          <button class="btn small primary" id="predictCheckBtn" disabled>Check prediction</button>
-          <button class="btn small ghost hidden" id="predictReplayBtn">Replay the loop</button>
-          <div class="lesson-nav">
-            <button class="btn small" id="missionPrevBtn">Previous</button>
-            <button class="btn small primary" id="missionNextBtn">Next mission</button>
-          </div>
-        </div>
+      <div class="mission-tip" id="missionTip"></div>
+      <div class="lesson-actions">
+        <button class="btn small" id="missionPrevBtn">Previous</button>
+        <button class="btn small primary" id="missionNextBtn">Next mission</button>
       </div>
     </div>
   </section>
@@ -1748,7 +1712,7 @@ function initMiniDemo(){
 }
 
 /* =====================================================================
- *  LESSON SYSTEM — missions, predict/reveal, phase vocabulary
+ *  LESSON SYSTEM — missions + phase vocabulary
  * ===================================================================== */
 const MISSIONS=[
   {
@@ -1757,18 +1721,9 @@ const MISSIONS=[
     tab:'Posterize',
     title:'Posterize a sunset',
     goal:'Load Dusk with K=4. Smooth gradients should collapse into flat bands — that’s what happens when K is too small for the scene.',
+    tip:'With only 4 means, whole ranges of similar pixels must share one color. Raise K afterward and watch the bands soften.',
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['photo','Dusk'],['K','4'],['look for','banding']],
-    predict:{
-      q:'Before you stare at the result: what happens to the orange glow?',
-      choices:[
-        {id:'a', label:'It stays a smooth wash of orange → yellow.'},
-        {id:'b', label:'It breaks into a few flat bands of color (posterized).'},
-        {id:'c', label:'The algorithm invents new oranges that weren’t in the photo.'}
-      ],
-      answer:'b',
-      reveal:'With only 4 means, whole ranges of similar pixels must share one color — so gradients become steps. Try raising K afterward and watch the bands soften.'
-    }
+    chips:[['photo','Dusk'],['K','4'],['look for','banding']]
   },
   {
     id:'distance',
@@ -1776,18 +1731,9 @@ const MISSIONS=[
     tab:'Distance',
     title:'Distance is a choice',
     goal:'Same Bloom photo, but measure “near” in LAB (closer to human vision) instead of raw RGB. The palette often looks less muddy.',
+    tip:'K-Means only knows the distance you give it. Flip Color space to RGB on the same photo and compare — “near” changes, so the discovered rule changes.',
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
-    chips:[['photo','Bloom'],['distance','LAB'],['compare','flip to RGB']],
-    predict:{
-      q:'If two colors look alike to you but sit far apart in RGB numbers, which space groups them better?',
-      choices:[
-        {id:'a', label:'RGB — the computer’s native channels always match perception.'},
-        {id:'b', label:'LAB — it was designed so equal distances feel more equal.'},
-        {id:'c', label:'Neither — K-Means ignores distance entirely.'}
-      ],
-      answer:'b',
-      reveal:'K-Means only knows the distance you give it. Switch Color space to RGB on the same photo and compare: “near” changes, so the discovered rule changes.'
-    }
+    chips:[['photo','Bloom'],['distance','LAB'],['compare','flip to RGB']]
   },
   {
     id:'random',
@@ -1795,18 +1741,9 @@ const MISSIONS=[
     tab:'Lucky guess',
     title:'Unsupervised ≠ unique',
     goal:'Grove with random initialization. Hit Re-seed a few times — different starting guesses can settle into different green palettes.',
+    tip:'The algorithm discovers a rule, not the rule. k-means++ spreads the first guesses to make results steadier — try flipping init after you re-seed.',
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
-    chips:[['photo','Grove'],['init','random'],['try','Re-seed']],
-    predict:{
-      q:'If nobody labels the pixels, will two runs with different random starts always find the same palette?',
-      choices:[
-        {id:'a', label:'Yes — there’s only one correct set of K colors.'},
-        {id:'b', label:'Not always — different guesses can converge to different local solutions.'},
-        {id:'c', label:'No — K-Means never converges.'}
-      ],
-      answer:'b',
-      reveal:'That’s the unsupervised punchline: the algorithm discovers a rule, not the rule. k-means++ spreads the first guesses to make results steadier — try flipping init after you re-seed a few times.'
-    }
+    chips:[['photo','Grove'],['init','random'],['try','Re-seed']]
   },
   {
     id:'free',
@@ -1814,13 +1751,13 @@ const MISSIONS=[
     tab:'Free lab',
     title:'Free exploration',
     goal:'Your turn. Drop any photo, drag K, flip RGB/LAB, and export the palette you discovered. Use Assign → Update to watch the loop.',
+    tip:'',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['mode','sandbox'],['export','CSS / PNG']],
-    predict:null
+    chips:[['mode','sandbox'],['export','CSS / PNG']]
   }
 ];
 
-let lesson={missionId:'posterize', choice:null, checked:false, tick:0};
+let lesson={missionId:'posterize'};
 
 function syncVocab(){
   const d=$('vocabDistance'), k=$('vocabK');
@@ -1888,6 +1825,9 @@ function renderMissionChrome(){
   $('missionMark').textContent=m.n;
   $('missionTitle').textContent=m.title;
   $('missionGoal').textContent=m.goal;
+  const tip=$('missionTip');
+  if(m.tip){ tip.textContent=m.tip; tip.classList.remove('hidden'); }
+  else{ tip.textContent=''; tip.classList.add('hidden'); }
   const meta=$('missionMeta'); meta.innerHTML='';
   (m.chips||[]).forEach(([k,v])=>{
     const s=document.createElement('span'); s.className='chip';
@@ -1900,71 +1840,11 @@ function renderMissionChrome(){
   const idx=MISSIONS.findIndex(x=>x.id===lesson.missionId);
   $('missionPrevBtn').disabled = idx<=0;
   $('missionNextBtn').textContent = idx>=MISSIONS.length-1 ? 'Back to start' : 'Next mission';
-  renderPredict(m);
-}
-
-function renderPredict(m){
-  const panel=$('predictPanel');
-  if(!m.predict){
-    panel.classList.add('hidden');
-    return;
-  }
-  panel.classList.remove('hidden');
-  $('predictQuestion').textContent=m.predict.q;
-  const host=$('predictChoices'); host.innerHTML='';
-  m.predict.choices.forEach(c=>{
-    const b=document.createElement('button');
-    b.type='button'; b.className='predict-choice';
-    b.setAttribute('aria-pressed', lesson.choice===c.id);
-    b.textContent=c.label;
-    b.dataset.id=c.id;
-    b.addEventListener('click',()=>{
-      if(lesson.checked) return;
-      lesson.choice=c.id;
-      host.querySelectorAll('.predict-choice').forEach(el=>el.setAttribute('aria-pressed', el.dataset.id===c.id));
-      $('predictCheckBtn').disabled=false;
-    });
-    host.appendChild(b);
-  });
-  const rev=$('predictReveal');
-  rev.classList.add('hidden'); rev.textContent='';
-  $('predictCheckBtn').disabled=!lesson.choice;
-  $('predictCheckBtn').classList.toggle('hidden', lesson.checked);
-  $('predictReplayBtn').classList.toggle('hidden', !lesson.checked);
-  if(lesson.checked) applyPredictResult(m, false);
-}
-
-function applyPredictResult(m, announce){
-  const ans=m.predict.answer;
-  $('predictChoices').querySelectorAll('.predict-choice').forEach(el=>{
-    el.classList.remove('correct','wrong');
-    if(el.dataset.id===ans) el.classList.add('correct');
-    else if(el.dataset.id===lesson.choice) el.classList.add('wrong');
-  });
-  const rev=$('predictReveal');
-  rev.classList.remove('hidden');
-  rev.innerHTML = (lesson.choice===ans
-    ? '<strong>Nice.</strong> '
-    : '<strong>Not quite — here’s the idea.</strong> ') + m.predict.reveal;
-  $('predictCheckBtn').classList.add('hidden');
-  $('predictReplayBtn').classList.remove('hidden');
-  if(announce && state.history && state.history.length){
-    // nudge them to watch the loop after checking
-  }
-}
-
-function checkPrediction(){
-  const m=currentMission(); if(!m.predict || !lesson.choice) return;
-  lesson.checked=true;
-  applyPredictResult(m, true);
 }
 
 function startMission(id, opts){
   const m=MISSIONS.find(x=>x.id===id)||MISSIONS[0];
   lesson.missionId=m.id;
-  lesson.choice=null;
-  lesson.checked=false;
-  lesson.tick=0;
   renderMissionChrome();
 
   // apply curricular defaults without double-computing
@@ -1994,12 +1874,7 @@ function startMission(id, opts){
   }
 }
 
-function onLessonComputeDone(){
-  // enable "replay the loop" once we have history during a predict mission
-  if(currentMission().predict && lesson.checked){
-    $('predictReplayBtn').classList.remove('hidden');
-  }
-}
+function onLessonComputeDone(){ /* hook for future lesson UI */ }
 
 function nextMission(dir){
   const idx=MISSIONS.findIndex(m=>m.id===lesson.missionId);
@@ -2022,8 +1897,6 @@ initMiniDemo();
 
 // lesson UI
 buildMissionTabs();
-$('predictCheckBtn').addEventListener('click', checkPrediction);
-$('predictReplayBtn').addEventListener('click',()=>{if(state.history){restartAnim();togglePlay();}});
 $('missionNextBtn').addEventListener('click',()=>nextMission(1));
 $('missionPrevBtn').addEventListener('click',()=>nextMission(-1));
 $('expPosterize').addEventListener('click',()=>{setK(4,true);});
