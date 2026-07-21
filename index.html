@@ -532,7 +532,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
  * ============================================================= */
 .algo{
   margin-bottom:var(--gap);
-  overflow:hidden;
+  overflow:visible;
 }
 .algo-grid{
   display:grid;grid-template-columns:1fr;gap:0;align-items:stretch;
@@ -607,13 +607,23 @@ footer.foot a{color:var(--accent);text-decoration:none}
   position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
   background:var(--surface);
   aspect-ratio:16/9;
-  min-height:clamp(380px, 68vh, 820px);
-  max-height:min(78vh, 860px);
-  touch-action:none; /* allow drag-rotate / pinch-friendly */
+  min-height:clamp(320px, 55dvh, 720px);
+  max-height:min(70dvh, 780px);
+  touch-action:none;
   cursor:grab;
 }
 .algo-canvas-wrap.is-dragging{cursor:grabbing}
 .algo-canvas-wrap canvas{display:block;width:100%;height:100%}
+.algo-canvas-wrap:fullscreen,
+.algo-canvas-wrap:-webkit-full-screen{
+  width:100vw;height:100vh;height:100dvh;
+  max-height:none;min-height:0;aspect-ratio:auto;
+  border:0;border-radius:0;background:var(--bg, #121311);
+}
+.algo-canvas-wrap:fullscreen canvas,
+.algo-canvas-wrap:-webkit-full-screen canvas{
+  width:100%;height:100%;object-fit:contain;
+}
 .algo-zoom{
   position:absolute;right:12px;bottom:12px;z-index:2;
   display:flex;align-items:center;gap:4px;
@@ -638,6 +648,32 @@ footer.foot a{color:var(--accent);text-decoration:none}
   background:color-mix(in srgb,var(--surface) 88%,transparent);
   border:1px solid var(--line);
   pointer-events:none;
+  max-width:min(52ch, calc(100% - 180px));
+}
+.algo-canvas-wrap:fullscreen .algo-hint,
+.algo-canvas-wrap:-webkit-full-screen .algo-hint,
+.algo-canvas-wrap:fullscreen .algo-zoom,
+.algo-canvas-wrap:-webkit-full-screen .algo-zoom{
+  bottom:max(16px, env(safe-area-inset-bottom));
+}
+.algo-canvas-wrap:fullscreen .algo-hint,
+.algo-canvas-wrap:-webkit-full-screen .algo-hint{
+  left:max(16px, env(safe-area-inset-left));
+}
+.algo-canvas-wrap:fullscreen .algo-zoom,
+.algo-canvas-wrap:-webkit-full-screen .algo-zoom{
+  right:max(16px, env(safe-area-inset-right));
+}
+
+/* Browser F11 / display fullscreen: stop sticky chrome from covering the movie */
+@media (display-mode: fullscreen){
+  .vocab{position:static}
+  .sidebar{position:static}
+  .algo-canvas-wrap{
+    max-height:none;
+    min-height:min(78vh, 900px);
+  }
+  .wrap{padding-top:16px;padding-bottom:24px}
 }
 .algo-legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink-mute);flex-wrap:wrap}
 .algo-legend span{display:inline-flex;align-items:center;gap:7px}
@@ -652,9 +688,12 @@ footer.foot a{color:var(--accent);text-decoration:none}
   position:sticky;top:0;z-index:25;
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
   margin-bottom:var(--gap);padding:10px 14px;
-  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+}
+@supports (height: 100dvh){
+  .vocab{top:max(0px, env(safe-area-inset-top));}
 }
 .vocab-terms{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:12.5px;color:var(--ink-mute);align-items:flex-start}
 .vocab-terms .vt{display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -695,12 +734,12 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== MASTHEAD ===================== -->
   <header class="masthead reveal">
     <div class="brand">
-      <span class="eyebrow">Pixels · RGB recipes · K-Means teams</span>
+      <span class="eyebrow">Learn K-Means with colors</span>
       <h1>Chroma <em>Lab</em></h1>
-      <p class="tagline">Every pixel on a screen is a recipe of three numbers — <b>R</b>ed, <b>G</b>reen, <b>B</b>lue. K-Means groups those recipes into K teams. You can measure “close” with the raw RGB numbers, or remix them into <b>LAB</b>, a ruler built to match human eyes better.</p>
+      <p class="tagline">Every tiny square on a screen is a <b>pixel</b> — a mix of <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue. K-Means sorts those mixes into <b>K</b> color teams. You choose how “close” is measured: plain <b>RGB</b>, or <b>LAB</b> (a remix that matches human eyes better).</p>
     </div>
     <div class="masthead-right">
-      <span class="privacy-pill" title="All processing happens locally in your browser."><span class="dot"></span> 100% on-device</span>
+      <span class="privacy-pill" title="Your photo stays in this browser. Nothing is uploaded."><span class="dot"></span> stays on your device</span>
       <button class="icon-btn" id="themeToggle" aria-label="Toggle light and dark mode" title="Toggle theme">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 6.5 6.5 0 1 0 20 14.5Z"/></svg>
@@ -714,7 +753,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
       <div class="algo-stage">
         <div class="algo-stage-head">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span class="algo-stage-title" id="algoStageTitle">2-D cartoon · flat table</span>
+            <span class="algo-stage-title" id="algoStageTitle">Flat picture · 2-D</span>
             <div class="algo-mode" role="group" aria-label="View mode">
               <button type="button" id="algoMode2d" aria-pressed="true">2D</button>
               <button type="button" id="algoMode3d" aria-pressed="false">3D</button>
@@ -724,34 +763,35 @@ footer.foot a{color:var(--accent);text-decoration:none}
         </div>
         <div class="algo-canvas-wrap" id="algoCanvasWrap">
           <canvas id="algoDemo" width="1120" height="630" role="img" aria-label="Animation: 2-D colored dots, then the same K-Means loop in 3-D RGB space with R, G, B axes. Scroll to zoom, drag to spin."></canvas>
-          <div class="algo-hint" id="algoHint">Scroll to zoom · drag to spin</div>
-          <div class="algo-zoom" role="group" aria-label="Zoom">
+          <div class="algo-hint" id="algoHint">Scroll = zoom · drag = spin</div>
+          <div class="algo-zoom" role="group" aria-label="Zoom and fullscreen">
             <button type="button" id="algoZoomOut" title="Zoom out" aria-label="Zoom out">−</button>
             <span id="algoZoomLabel">100%</span>
             <button type="button" id="algoZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
             <button type="button" id="algoZoomReset" title="Reset view" aria-label="Reset view">⟲</button>
+            <button type="button" id="algoFullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
           </div>
         </div>
         <div class="algo-legend" id="algoLegend">
           <span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
-          <span><span class="r"></span> ring = a flag (one color the computer is trying)</span>
+          <span><span class="r"></span> ring = a flag (a color the computer is trying)</span>
         </div>
       </div>
       <div class="algo-copy">
         <div class="algo-copy-main">
-          <h2>The big idea (watch the movie ↑)</h2>
-          <p class="lede">A photo is millions of tiny squares called <b>pixels</b>. Each pixel is stored as three dials from 0–255: how much <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue light to mix. That RGB recipe is what the screen actually uses.</p>
-          <p class="lede">Watch the movie: first a <b>flat 2-D cartoon</b>, then the same loop in <b>3-D RGB space</b> — each dial becomes an axis (R, G, B). Similar colors form clumps. K-Means plants <b>K</b> flags, then loops: join the closest flag, move each flag to its team’s middle, repeat. The catch: “closest” needs a <b>ruler</b> — RGB or LAB.</p>
+          <h2>Watch the loop</h2>
+          <p class="lede">A photo is made of millions of tiny squares called <b>pixels</b>. Each pixel is three dials from 0–255: <b>R</b>ed, <b>G</b>reen, and <b>B</b>lue. That mix is what the screen draws.</p>
+          <p class="lede">The movie above starts flat (<b>2-D</b>), then lifts into <b>3-D RGB space</b> — one axis per dial. Nearby colors form clumps. K-Means drops <b>K</b> flags, then repeats: join the closest flag → move each flag to its team’s middle → stop when flags barely move. “Closest” depends on your <b>ruler</b>: RGB or LAB.</p>
         </div>
         <div class="algo-steps" id="algoSteps">
-          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random places in color-space. First try is usually messy — that’s OK.</p></div>
+          <div class="algo-step" data-phase="guess"><span class="n">1</span><p><strong>Guess.</strong> Drop K flags in random spots. The first try is usually messy — that’s fine.</p></div>
           <div class="algo-loop" id="algoLoop" aria-label="Repeat Assign and Update until the flags stop moving">
             <span class="algo-loop-label">repeat this loop</span>
-            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins the closest flag, using your chosen ruler (RGB or LAB).</p></div>
-            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Slide each flag to the average of its team’s recipes — the middle of that group.</p></div>
+            <div class="algo-step" data-phase="assign"><span class="n">2</span><p><strong>Assign.</strong> Every pixel joins the closest flag (using RGB or LAB).</p></div>
+            <div class="algo-step" data-phase="update"><span class="n">3</span><p><strong>Update.</strong> Each flag slides to the middle of its team.</p></div>
             <div class="algo-loop-until"><span class="arrow">↻ keep going</span> while the flags are still sliding a lot</div>
           </div>
-          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color (shown back as RGB on screen).</p></div>
+          <div class="algo-step" data-phase="converge"><span class="n">4</span><p><strong>Converge.</strong> When flags barely move, stop. Paint every pixel with its team’s flag color.</p></div>
         </div>
       </div>
     </div>
@@ -760,8 +800,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- ===================== RGB vs LAB ===================== -->
   <section class="card reveal" id="spaceCard" style="animation-delay:.025s;margin-bottom:var(--gap)">
     <div class="card-head">
-      <h2>RGB vs LAB — the ruler for “close”</h2>
-      <span class="sub" id="spaceActiveLabel">using RGB right now</span>
+      <h2>RGB vs LAB — two ways to measure “close”</h2>
+      <span class="sub" id="spaceActiveLabel">Ruler: RGB</span>
     </div>
     <div class="card-pad" style="padding-top:14px">
       <div class="rgb-explain" style="margin-bottom:14px">
@@ -785,7 +825,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <circle cx="66" cy="54" r="3.2" fill="#7b5ea7"/>
         </svg>
         <div class="txt">
-          Your screen only understands <b>RGB</b>. A bright red pixel might be <b>(255, 0, 0)</b> — max red, no green, no blue. A pale sky might be something like <b>(180, 210, 240)</b>. K-Means needs to decide which recipes are “neighbors.” That decision is not free: you pick the measuring stick.
+          Your screen only speaks <b>RGB</b>. Bright red might be <b>(255, 0, 0)</b>. A pale sky might be <b>(180, 210, 240)</b>. K-Means needs a way to decide which mixes are neighbors — that’s your <b>ruler</b>.
         </div>
       </div>
 
@@ -811,8 +851,8 @@ footer.foot a{color:var(--accent);text-decoration:none}
       </div>
 
       <div class="ruler-live" id="rulerLive">
-        <span class="which" id="rulerWhich">Active ruler: RGB</span>
-        <span id="rulerBlurb">Grouping with the raw Red/Green/Blue dials. “Near” means the three numbers are alike — which is simple, but not always what your eyes would call alike.</span>
+        <span class="which" id="rulerWhich">Ruler in use: RGB</span>
+        <span id="rulerBlurb">Grouping with the raw Red / Green / Blue dials. “Near” means the three numbers are alike — simple, but not always what your eyes would call alike.</span>
       </div>
     </div>
   </section>
@@ -846,10 +886,10 @@ footer.foot a{color:var(--accent);text-decoration:none}
   <!-- Persistent vocabulary / phase strip -->
   <div class="vocab reveal" style="animation-delay:.04s" id="vocabStrip" aria-label="Word bank">
     <div class="vocab-terms">
-      <span class="vt"><span><b>pixel</b><span class="eq">=</span>R + G + B recipe</span><span class="why">three dials 0–255 on screen</span></span>
-      <span class="vt"><span><b>flag / mean</b><span class="eq">=</span>one team color</span><span class="why">stands for many pixels</span></span>
-      <span class="vt"><span><b>ruler</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span><span class="why" id="vocabRulerWhy">raw screen numbers</span></span>
-      <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span> colors max</span><span class="why">how many flags you allow</span></span>
+      <span class="vt"><span><b>pixel</b><span class="eq">=</span>one tiny square</span><span class="why">made of R + G + B</span></span>
+      <span class="vt"><span><b>flag</b><span class="eq">=</span>one team color</span><span class="why">stands for many pixels</span></span>
+      <span class="vt"><span><b>ruler</b><span class="eq">=</span><span id="vocabDistance">RGB</span></span><span class="why" id="vocabRulerWhy">how we measure “close”</span></span>
+      <span class="vt"><span><b>K</b><span class="eq">=</span><span id="vocabK">8</span></span><span class="why">how many color teams</span></span>
     </div>
     <div class="vocab-phase" aria-live="polite">
       <span class="phase-pill" id="phaseGuess">Guess</span>
@@ -874,7 +914,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
             <button role="tab" id="tabCompare" aria-selected="false" aria-controls="viewCompare">Compare&nbsp;slider</button>
           </div>
         </div>
-        <p class="control-desc" style="padding:10px var(--pad) 0;margin:0">Every pixel here is an RGB recipe. Grouping happens in the ruler you chose (<span id="stageRuler">RGB</span>) — then we paint the result back in RGB so the screen can show it.</p>
+        <p class="control-desc" style="padding:10px var(--pad) 0;margin:0">Pixels always start as RGB. We group them with your ruler (<span id="stageRuler">RGB</span>), then paint the result back in RGB so the screen can show it.</p>
 
         <div class="stage-body">
           <!-- empty state / dropzone -->
@@ -937,7 +977,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
         <div class="pal-toolbar">
           <div class="k-label-wrap">
             <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600">Colors the computer picked</h2>
-            <span class="control-desc">Each box is one final flag, shown as an RGB hex code the screen can use. The % is how many pixels joined that team while measuring nearness in <span id="palRuler">RGB</span>. Click to copy.</span>
+            <span class="control-desc">Each box is one final flag color (as RGB hex). The % is how many pixels joined that team. Click a box to copy its code. Ruler in use: <span id="palRuler">RGB</span>.</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:var(--ink-mute)">Sort</span>
@@ -948,7 +988,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
           </div>
         </div>
         <div class="palette" id="palette" aria-live="polite">
-          <p style="color:var(--ink-mute);font-size:14px;padding:8px;line-height:1.45">After a photo finishes, the flag colors show up here. A person did not choose them — the loop found them.</p>
+          <p style="color:var(--ink-mute);font-size:14px;padding:8px;line-height:1.45">When a photo finishes, the flag colors appear here. Nobody picked them by hand — the loop found them.</p>
         </div>
       </section>
 
@@ -1008,7 +1048,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
               </div>
             </div>
 
-            <p style="font-size:14px;margin-bottom:14px;line-height:1.5">Important: even in LAB mode, the photo still <b>starts</b> as RGB and the final flags are converted <b>back</b> to RGB for painting and hex codes. LAB is only the temporary classroom where “near” is graded.</p>
+            <p style="font-size:14px;margin-bottom:14px;line-height:1.5">Even in LAB mode, the photo still <b>starts</b> as RGB, and the final flags are turned <b>back</b> into RGB so the screen can draw them. LAB is only the temporary map we use to decide what counts as “close.”</p>
 
             <div class="cols">
               <div>
@@ -1143,7 +1183,7 @@ footer.foot a{color:var(--accent);text-decoration:none}
 
       <!-- DOWNLOADS -->
       <section class="card reveal" style="animation-delay:.2s">
-        <div class="card-head"><h2>Save your RGB colors</h2><span class="sub">flags shown as screen recipes</span></div>
+        <div class="card-head"><h2>Save your colors</h2><span class="sub">each flag as an RGB code</span></div>
         <div class="card-pad">
           <div class="dl-grid">
             <button class="btn small" id="dlPng" disabled>
@@ -1934,8 +1974,8 @@ function refreshSampleActive(){
 function initAlgoDemo(){
   const cv=$('algoDemo'); if(!cv)return;
   const ctx=cv.getContext('2d');
-  const W=cv.width, H=cv.height, K=3;
-  const S=W/640; // scale drawing so bigger canvas stays readable
+  let W=cv.width, H=cv.height; const K=3;
+  let S=W/640; // scale drawing so bigger canvas stays readable
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   let pts=[], centroids=[], labels=[], visibleMeans=0;
   let step=0, phase='seed', t0=0, moveFrom=[], moveTo=[], trails=[], raf=0;
@@ -1944,9 +1984,9 @@ function initAlgoDemo(){
   let autoSpin=true, dragging=false, lastPtr=null;
 
   const phaseCopy2d={
-    seed:'2-D: a cloud of differently colored pixels…',
-    guess:'Guess — dropping random flags on the flat table…',
-    assign:'Assign — every colored dot joins the closest flag',
+    seed:'2-D: spreading out differently colored pixels…',
+    guess:'Guess — dropping random flags…',
+    assign:'Assign — each colored dot joins the closest flag',
     update:'Update — each flag slides to its team’s middle',
     converge:'Converge — next we’ll lift this into 3-D RGB…',
     lift:'Lifting into 3-D — each color becomes a spot in RGB space…'
@@ -1954,9 +1994,9 @@ function initAlgoDemo(){
   const phaseCopy3d={
     seed:'3-D RGB: each dial is an axis (R · G · B)…',
     guess:'Guess — planting flags inside the RGB cube…',
-    assign:'Assign — closest flag in 3-D (R, G, B distance)',
+    assign:'Assign — closest flag using R, G, B distance',
     update:'Update — flags slide to their team’s RGB middle',
-    converge:'Converge — real photos do this in RGB (or LAB)…'
+    converge:'Converge — real photos do this same loop…'
   };
   const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rand=(a,b)=>a+Math.random()*(b-a);
@@ -1993,7 +2033,8 @@ function initAlgoDemo(){
     const yr=y*Math.cos(rotX)-zr*Math.sin(rotX);
     zr=y*Math.sin(rotX)+zr*Math.cos(rotX);
     const depth=2.2+zr*0.4;
-    const base=Math.min(W,H)*0.68*zoom; // fill most of the stage by default
+    // Leave margin so μ labels / axes don’t clip at the canvas edge
+    const base=Math.min(W,H)*0.58*zoom;
     const sc=base/depth;
     return {sx:W*0.50+xr*sc, sy:H*0.50-yr*sc, depth:zr, sc};
   }
@@ -2013,8 +2054,8 @@ function initAlgoDemo(){
   function syncChrome(){
     const title=$('algoStageTitle');
     if(title) title.textContent = dim==='2d'
-      ? '2-D cartoon · flat table'
-      : '3-D · real RGB color space (R, G, B)';
+      ? 'Flat picture · 2-D'
+      : 'RGB cube · 3-D (R, G, B)';
     const b2=$('algoMode2d'), b3=$('algoMode3d');
     if(b2) b2.setAttribute('aria-pressed', dim==='2d'?'true':'false');
     if(b3) b3.setAttribute('aria-pressed', dim==='3d'?'true':'false');
@@ -2023,8 +2064,8 @@ function initAlgoDemo(){
       leg.innerHTML = dim==='2d'
         ? `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
            <span><span class="r"></span> ring = a flag</span>`
-        : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> position = that pixel’s R, G, B recipe</span>
-           <span><span class="r"></span> ring = a flag floating in the cube</span>`;
+        : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> spot = that pixel’s R, G, B mix</span>
+           <span><span class="r"></span> ring = a flag in the cube</span>`;
     }
     syncZoomUI();
   }
@@ -2466,15 +2507,75 @@ function initAlgoDemo(){
   $('algoMode2d')?.addEventListener('click', ()=>jumpTo('2d'));
   $('algoMode3d')?.addEventListener('click', ()=>jumpTo('3d'));
 
-  // Zoom + drag spin
+  // Zoom + drag spin + fullscreen
+  const wrap=$('algoCanvasWrap')||cv.parentElement;
+
   $('algoZoomIn')?.addEventListener('click', ()=>setZoom(zoom*1.18));
   $('algoZoomOut')?.addEventListener('click', ()=>setZoom(zoom/1.18));
   $('algoZoomReset')?.addEventListener('click', ()=>{
-    setZoom(dim==='3d'?1.9:1);
+    setZoom(dim==='3d'?1.6:1);
     rotY=0.55; rotX=0.32; autoSpin=true;
   });
 
-  const wrap=$('algoCanvasWrap')||cv.parentElement;
+  function isAlgoFullscreen(){
+    const fs=document.fullscreenElement||document.webkitFullscreenElement;
+    return fs===wrap || fs===cv;
+  }
+  function syncFsButton(){
+    const btn=$('algoFullscreen'); if(!btn)return;
+    const on=isAlgoFullscreen();
+    btn.textContent = on ? '✕' : '⛶';
+    btn.title = on ? 'Exit fullscreen' : 'Fullscreen';
+    btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+  }
+  async function toggleAlgoFullscreen(){
+    try{
+      if(isAlgoFullscreen()){
+        if(document.exitFullscreen) await document.exitFullscreen();
+        else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }else{
+        const el=wrap||cv;
+        if(el.requestFullscreen) await el.requestFullscreen();
+        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    }catch(err){ console.warn('fullscreen', err); }
+  }
+  function fitCanvasToWrap(){
+    const box=(wrap||cv).getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1, 2);
+    const prevW=W, prevH=H;
+    if(isAlgoFullscreen()){
+      const cssW=Math.max(320, Math.floor(box.width));
+      const cssH=Math.max(200, Math.floor(box.height));
+      cv.width=Math.round(cssW*dpr);
+      cv.height=Math.round(cssH*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      W=cssW; H=cssH;
+    }else{
+      ctx.setTransform(1,0,0,1,0,0);
+      if(cv.width!==1120 || cv.height!==630){ cv.width=1120; cv.height=630; }
+      W=1120; H=630;
+    }
+    S=W/640;
+    // Keep 2-D dots in frame when the canvas size changes (fullscreen on/off)
+    if(prevW>0 && prevH>0 && (W!==prevW || H!==prevH) && dim==='2d'){
+      const sx=W/prevW, sy=H/prevH;
+      pts.forEach(p=>{
+        p.x*=sx; p.y*=sy;
+        if(p.x0!=null){ p.x0*=sx; p.y0*=sy; }
+      });
+      centroids.forEach(c=>{
+        if(c.x!=null){ c.x*=sx; c.y*=sy; }
+      });
+    }
+  }
+
+  $('algoFullscreen')?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleAlgoFullscreen(); });
+  document.addEventListener('fullscreenchange', ()=>{ fitCanvasToWrap(); syncFsButton(); });
+  document.addEventListener('webkitfullscreenchange', ()=>{ fitCanvasToWrap(); syncFsButton(); });
+  window.addEventListener('resize', ()=>{ if(isAlgoFullscreen()) fitCanvasToWrap(); });
+  syncFsButton();
+
   wrap?.addEventListener('wheel', (e)=>{
     e.preventDefault();
     const dir = e.deltaY>0 ? 1/1.12 : 1.12;
@@ -2538,8 +2639,8 @@ const MISSIONS=[
     n:'1',
     tab:'Few colors',
     title:'What if K is too small?',
-    goal:'Dusk is full of smooth RGB blends (lots of nearby orange/purple recipes). With only K=4 flags in RGB space, many different recipes get forced onto the same team — so the sky turns into flat poster bands.',
-    tip:'Raise K. Extra flags can cover slices of the gradient. You’re still grouping RGB numbers; you’re just allowing more team centers.',
+    goal:'The Dusk photo has lots of smooth blends. With only K=4 flags in RGB, many different colors get forced onto the same team — so the sky turns into flat poster bands.',
+    tip:'Try raising K. More flags can cover more of the blend. You’re still grouping RGB numbers — you just allow more team centers.',
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
     chips:[['photo','Dusk'],['ruler','RGB'],['K','4']]
   },
@@ -2548,8 +2649,8 @@ const MISSIONS=[
     n:'2',
     tab:'Nearness',
     title:'Same pixels, different ruler',
-    goal:'Bloom still starts as RGB pixels, but we convert them to LAB before grouping. LAB remixes each recipe into Lightness + color axes so “close” matches eyes better. Flip to RGB afterward — K stays 8, but teams can change because nearness changed.',
-    tip:'Watch greens and pinks when you switch rulers. If LAB looks cleaner, you’ve seen why people invent a second color space even though screens only speak RGB.',
+    goal:'Bloom still starts as RGB pixels, but we group them in LAB. LAB remixes each mix into Lightness + color axes so “close” matches eyes better. Flip back to RGB — K stays 8, but teams can change.',
+    tip:'Watch greens and pinks when you switch rulers. If LAB looks cleaner, you’ve seen why a second map can help — even though screens only draw RGB.',
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
     chips:[['photo','Bloom'],['ruler','LAB'],['try','switch to RGB']]
   },
@@ -2558,8 +2659,8 @@ const MISSIONS=[
     n:'3',
     tab:'Lucky start',
     title:'Different guesses, different endings',
-    goal:'Grove groups in RGB with random first flags. The pixels’ RGB recipes never change — only the starting Guess does. Hit New Guess a few times and the green teams can settle differently.',
-    tip:'Unsupervised means: no teacher said which green is “correct.” Same RGB cloud, different lucky starts → different local answers. Try k-means++ for calmer starts.',
+    goal:'Grove groups in RGB with random first flags. The pixels never change — only the starting Guess does. Hit New Guess a few times and the green teams can settle differently.',
+    tip:'Nobody labeled the “right” green. Same colors, different lucky starts → different answers. Try k-means++ for calmer starts.',
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
     chips:[['photo','Grove'],['ruler','RGB'],['start','random']]
   },
@@ -2568,8 +2669,8 @@ const MISSIONS=[
     n:'∞',
     tab:'Free play',
     title:'Your turn',
-    goal:'Drop any photo. Remember: every pixel is an RGB recipe; RGB/LAB only chooses the ruler for Assign/Update. Change K, flip the ruler, press Play, then save the RGB palette if you want.',
-    tip:'Change one knob at a time — K, or RGB↔LAB — so you can see which change moved the teams.',
+    goal:'Use any photo. Pixels are always RGB; RGB/LAB only picks the ruler for Assign and Update. Change K, flip the ruler, press Play, then save the palette if you want.',
+    tip:'Change one thing at a time — K, or RGB↔LAB — so you can tell which change moved the teams.',
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
     chips:[['mode','sandbox'],['pixels','always RGB'],['ruler','your pick']]
   }
@@ -2583,15 +2684,15 @@ function syncVocab(){
   const d=$('vocabDistance'), k=$('vocabK'), why=$('vocabRulerWhy');
   if(d) d.textContent = name;
   if(k) k.textContent = String(state.K);
-  if(why) why.textContent = lab ? 'eye-friendly remix' : 'raw screen numbers';
+  if(why) why.textContent = lab ? 'closer to what eyes see' : 'plain screen numbers';
 
   const which=$('rulerWhich'), blurb=$('rulerBlurb'), active=$('spaceActiveLabel');
-  if(which) which.textContent = 'Active ruler: ' + name;
-  if(active) active.textContent = 'using ' + name + ' right now';
+  if(which) which.textContent = 'Ruler in use: ' + name;
+  if(active) active.textContent = 'Ruler: ' + name;
   if(blurb){
     blurb.textContent = lab
-      ? 'Grouping after remixing each RGB pixel into LAB (Lightness, green↔red, blue↔yellow). “Near” is closer to what your eyes call similar — then flags convert back to RGB for the screen.'
-      : 'Grouping with the raw Red/Green/Blue dials stored in the file. “Near” means the three numbers are alike — simple for computers, but not always what your eyes would call alike.';
+      ? 'Grouping after remixing each RGB pixel into LAB (Lightness, green↔red, blue↔yellow). “Near” is closer to what your eyes call similar — then flags turn back into RGB for the screen.'
+      : 'Grouping with the raw Red / Green / Blue dials. “Near” means the three numbers are alike — simple for computers, but not always what your eyes would call alike.';
   }
   ['stageRuler','palRuler','learnRuler'].forEach(id=>{
     const el=$(id); if(el) el.textContent = name;
