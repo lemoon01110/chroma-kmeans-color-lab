@@ -2,8 +2,10 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Chroma — K-Means Color Lab</title>
 <!--
   ┌─────────────────────────────────────────────────────────────────────┐
@@ -245,7 +247,57 @@ header.masthead{
 .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);transform:scale(.995)}
 .dropzone h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:6px}
 .dropzone p{color:var(--ink-mute);font-size:14px;margin-bottom:18px}
-.dz-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.dz-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
+
+/* Webcam capture modal — iPad / touch friendly */
+.cam-modal{
+  position:fixed;inset:0;z-index:80;
+  display:flex;align-items:center;justify-content:center;
+  padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+          max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background:rgba(20,16,12,.55);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.cam-sheet{
+  width:min(720px,100%);max-height:min(92dvh,920px);
+  display:flex;flex-direction:column;gap:12px;
+  background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:18px;box-shadow:var(--shadow-lg);padding:14px;
+}
+.cam-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 4px}
+.cam-head h3{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.2}
+.cam-head p{color:var(--ink-mute);font-size:13px;margin-top:4px;line-height:1.4}
+.cam-stage{
+  position:relative;flex:1;min-height:220px;
+  border-radius:14px;overflow:hidden;background:#111;border:1px solid var(--line);
+  aspect-ratio:4/3;max-height:min(58dvh,560px);
+}
+.cam-stage video,.cam-stage canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block;background:#111;
+}
+.cam-stage.mirrored video{transform:scaleX(-1)}
+.cam-status{
+  position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+  padding:24px;color:#f5f0e6;font-size:15px;line-height:1.45;background:rgba(0,0,0,.55);
+}
+.cam-status.hidden{display:none!important}
+.cam-bar{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  padding:2px 2px 4px;
+}
+.cam-bar .cam-left,.cam-bar .cam-right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cam-snap{
+  min-width:132px;min-height:48px;font-size:16px;font-weight:600;
+  border-radius:999px;padding:12px 22px;
+}
+@media(max-width:560px){
+  .cam-sheet{padding:12px;border-radius:16px}
+  .cam-stage{aspect-ratio:3/4;max-height:min(62dvh,640px)}
+  .cam-bar{flex-direction:column;align-items:stretch}
+  .cam-bar .cam-left,.cam-bar .cam-right{justify-content:center}
+  .cam-snap{width:100%}
+}
 
 /* samples */
 .samples{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;justify-content:center}
@@ -276,6 +328,12 @@ header.masthead{
 .btn.ghost:hover{background:var(--surface-2)}
 .btn.small{padding:7px 11px;font-size:12.5px;border-radius:9px}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+@media (pointer:coarse){
+  .btn{min-height:44px;padding:12px 16px}
+  .btn.small{min-height:40px}
+  .icon-btn{width:46px;height:46px}
+  .sample{width:104px}
+}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 
 /* K slider — do NOT set padding here; .card-pad owns inset (old .k-block{padding:2px} overrode it) */
@@ -920,15 +978,21 @@ footer.foot a{color:var(--accent);text-decoration:none}
           <!-- empty state / dropzone -->
           <div id="dropzone" class="dropzone">
             <h3>Add a photo to try the idea</h3>
-            <p>Or tap a demo above. Your picture stays on this device — we never upload it.</p>
+            <p>Choose a photo, take one with the camera, or tap a demo. Stays on this device — never uploaded.</p>
             <div class="dz-actions">
-              <button class="btn primary" id="pickBtn">
+              <button class="btn primary" id="pickBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-                Choose image
+                Choose photo
+              </button>
+              <button class="btn" id="camBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v12H4V8z"/><circle cx="12" cy="14" r="3.5"/></svg>
+                Use camera
               </button>
             </div>
             <div class="samples" id="samplesEmpty" aria-label="Sample images"></div>
             <input type="file" id="fileInput" accept="image/*" class="sr-only">
+            <!-- iOS/iPadOS Photos + Camera roll picker (no live preview) -->
+            <input type="file" id="captureInput" accept="image/*" capture="environment" class="sr-only">
           </div>
 
           <!-- side by side -->
@@ -963,9 +1027,13 @@ footer.foot a{color:var(--accent);text-decoration:none}
                 <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
                 grouping colors…
               </span>
-              <button class="btn small" id="changeImgBtn">
+              <button class="btn small" id="changeImgBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-                New image
+                New photo
+              </button>
+              <button class="btn small" id="camBtnLoaded" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v12H4V8z"/><circle cx="12" cy="14" r="3.5"/></svg>
+                Camera
               </button>
             </div>
           </div>
@@ -1212,6 +1280,36 @@ footer.foot a{color:var(--accent);text-decoration:none}
     <span>Chroma Lab shows how computers group colors — <strong>everything stays on your device</strong>.</span>
     <span>Curious coders: the loop is explained in comments at the bottom of this page’s source.</span>
   </footer>
+</div>
+
+<!-- Webcam capture overlay — fixed, outside layout for iPad Safari -->
+<div id="camModal" class="cam-modal hidden" role="dialog" aria-modal="true" aria-labelledby="camTitle" hidden>
+  <div class="cam-sheet">
+    <div class="cam-head">
+      <div>
+        <h3 id="camTitle">Camera</h3>
+        <p>Point at something colorful, then tap Snap. Nothing leaves this iPad or laptop.</p>
+      </div>
+      <button class="icon-btn" id="camClose" type="button" aria-label="Close camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="cam-stage" id="camStage">
+      <video id="camVideo" playsinline webkit-playsinline muted autoplay></video>
+      <canvas id="camSnapCanvas" class="hidden" aria-hidden="true"></canvas>
+      <div class="cam-status" id="camStatus">Starting camera…</div>
+    </div>
+    <div class="cam-bar">
+      <div class="cam-left">
+        <button class="btn" id="camFlip" type="button" disabled>Flip camera</button>
+        <button class="btn ghost" id="camFallback" type="button">Use photo library</button>
+      </div>
+      <div class="cam-right">
+        <button class="btn" id="camCancel" type="button">Cancel</button>
+        <button class="btn primary cam-snap" id="camSnap" type="button" disabled>Snap</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1832,24 +1930,193 @@ $('dlSwatch').addEventListener('click',exportSwatch);
 $('dlJson').addEventListener('click',exportJson);
 $('dlCss').addEventListener('click',exportCss);
 
-// --- file input / dropzone ---
+// --- file input / dropzone / camera (iPad-friendly) ---
 const fileInput=$('fileInput');
+const captureInput=$('captureInput');
 $('pickBtn').addEventListener('click',()=>fileInput.click());
 $('changeImgBtn').addEventListener('click',()=>fileInput.click());
-fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(f)readFile(f);});
+fileInput.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)readFile(f); e.target.value='';});
+captureInput.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)readFile(f); e.target.value='';});
+
 function readFile(file){
-  if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
-  const fr=new FileReader();
-  fr.onload=()=>{state.activeSample=null;refreshSampleActive();loadImageFromSource(fr.result);};
-  fr.readAsDataURL(file);
+  // iPad Photos sometimes omits MIME; still try if name looks like an image
+  const okType = file.type ? file.type.startsWith('image/') : /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(file.name||'');
+  if(!okType){alert('Please choose a photo (JPG, PNG, or similar).');return;}
+  const url=URL.createObjectURL(file);
+  const im=new Image();
+  im.onload=()=>{
+    try{URL.revokeObjectURL(url);}catch(e){}
+    state.activeSample=null; refreshSampleActive();
+    setImage(im);
+  };
+  im.onerror=()=>{
+    try{URL.revokeObjectURL(url);}catch(e){}
+    // Fallback: FileReader (helps some older WebViews)
+    const fr=new FileReader();
+    fr.onload=()=>{state.activeSample=null;refreshSampleActive();loadImageFromSource(fr.result);};
+    fr.onerror=()=>alert('Could not read that photo. Try a different image or the camera.');
+    fr.readAsDataURL(file);
+  };
+  im.src=url;
 }
 const dz=$('dropzone');
 ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev==='dragleave'&&dz.contains(e.relatedTarget))return;dz.classList.remove('drag');}));
 dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readFile(f);});
-// also accept drops anywhere on the stage once loaded
 document.addEventListener('dragover',e=>e.preventDefault());
 document.addEventListener('drop',e=>{if(dz.classList.contains('hidden')){e.preventDefault();const f=e.dataTransfer.files[0];if(f)readFile(f);}});
+
+/* ---- Webcam (getUserMedia) — works on iPad Safari over HTTPS ---- */
+const cam={
+  stream:null,
+  facing:'environment', // rear camera when available
+  opening:false,
+};
+function camSupported(){
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+}
+function setCamStatus(msg, show){
+  const el=$('camStatus');
+  if(msg!=null) el.textContent=msg;
+  el.classList.toggle('hidden', !show);
+}
+function stopCamStream(){
+  if(cam.stream){
+    cam.stream.getTracks().forEach(t=>{try{t.stop();}catch(e){}});
+    cam.stream=null;
+  }
+  const v=$('camVideo');
+  try{v.pause();}catch(e){}
+  v.srcObject=null;
+}
+function closeCamModal(){
+  stopCamStream();
+  cam.opening=false;
+  const modal=$('camModal');
+  modal.classList.add('hidden');
+  modal.hidden=true;
+  $('camSnap').disabled=true;
+  $('camFlip').disabled=true;
+  setCamStatus('Starting camera…', true);
+  document.body.style.overflow='';
+}
+async function openCamModal(){
+  const modal=$('camModal');
+  modal.hidden=false;
+  modal.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  $('camSnap').disabled=true;
+  $('camFlip').disabled=true;
+  setCamStatus('Starting camera…', true);
+
+  if(!camSupported()){
+    setCamStatus('Live camera isn’t available in this browser. Tap “Use photo library” to take or pick a photo instead.', true);
+    return;
+  }
+  // Secure context required (https or localhost). GitHub Pages is fine; file:// is not.
+  if(!window.isSecureContext){
+    setCamStatus('Camera needs a secure page (https). Open the lab from the website link, then try again.', true);
+    return;
+  }
+  await startCamStream(cam.facing);
+}
+async function startCamStream(facing){
+  if(cam.opening) return;
+  cam.opening=true;
+  stopCamStream();
+  setCamStatus('Starting camera…', true);
+  $('camSnap').disabled=true;
+  const video=$('camVideo');
+  const stage=$('camStage');
+  const preferEnv = facing==='environment';
+  stage.classList.toggle('mirrored', !preferEnv);
+
+  const attempts=[
+    {audio:false, video:{facingMode:{ideal:facing}, width:{ideal:1280}, height:{ideal:720}}},
+    {audio:false, video:{facingMode:facing}},
+    {audio:false, video:true},
+  ];
+  let lastErr=null;
+  for(const constraints of attempts){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia(constraints);
+      cam.stream=stream;
+      cam.facing=facing;
+      video.srcObject=stream;
+      video.setAttribute('playsinline','');
+      video.setAttribute('webkit-playsinline','');
+      video.muted=true;
+      const playP=video.play();
+      if(playP && playP.catch) playP.catch(()=>{});
+      // Wait until we have dimensions (iOS can be slow)
+      await new Promise((resolve)=>{
+        if(video.readyState>=2 && video.videoWidth){resolve();return;}
+        const done=()=>{video.removeEventListener('loadedmetadata',done);resolve();};
+        video.addEventListener('loadedmetadata',done);
+        setTimeout(resolve,2500);
+      });
+      setCamStatus('', false);
+      $('camSnap').disabled=false;
+      $('camFlip').disabled=false;
+      cam.opening=false;
+      return;
+    }catch(err){
+      lastErr=err;
+    }
+  }
+  cam.opening=false;
+  const name=(lastErr&&lastErr.name)||'';
+  let msg='Could not open the camera.';
+  if(name==='NotAllowedError' || name==='PermissionDeniedError'){
+    msg='Camera permission is blocked. On iPad: Settings → Safari → Camera → Allow, then reload this page.';
+  }else if(name==='NotFoundError' || name==='DevicesNotFoundError'){
+    msg='No camera found. Tap “Use photo library” to pick a photo instead.';
+  }else if(name==='NotReadableError' || name==='TrackStartError'){
+    msg='Camera is busy in another app. Close that app, then try again.';
+  }
+  setCamStatus(msg, true);
+}
+function snapFromCamera(){
+  const video=$('camVideo');
+  if(!cam.stream || !video.videoWidth){
+    setCamStatus('Camera isn’t ready yet — wait a moment, then tap Snap.', true);
+    return;
+  }
+  const w=video.videoWidth, h=video.videoHeight;
+  const c=$('camSnapCanvas');
+  c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  // Front camera is mirrored in preview; un-mirror for the saved frame so text isn’t flipped
+  const mirrored=$('camStage').classList.contains('mirrored');
+  if(mirrored){
+    ctx.translate(w,0); ctx.scale(-1,1);
+  }
+  ctx.drawImage(video,0,0,w,h);
+  state.activeSample=null; refreshSampleActive();
+  setImage(c);
+  closeCamModal();
+}
+function wireCamUi(){
+  const openers=[$('camBtn'),$('camBtnLoaded')].filter(Boolean);
+  openers.forEach(btn=>btn.addEventListener('click',()=>openCamModal()));
+  $('camClose').addEventListener('click',closeCamModal);
+  $('camCancel').addEventListener('click',closeCamModal);
+  $('camSnap').addEventListener('click',snapFromCamera);
+  $('camFlip').addEventListener('click',()=>{
+    const next=cam.facing==='environment'?'user':'environment';
+    startCamStream(next);
+  });
+  $('camFallback').addEventListener('click',()=>{
+    closeCamModal();
+    // capture=environment opens Camera/Photos sheet on iOS; otherwise gallery
+    captureInput.click();
+  });
+  $('camModal').addEventListener('click',e=>{if(e.target===$('camModal')) closeCamModal();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && !$('camModal').classList.contains('hidden')) closeCamModal();
+  });
+}
+wireCamUi();
 
 // --- theme ---
 const themeToggle=$('themeToggle');
@@ -2062,8 +2329,8 @@ function initAlgoDemo(){
     const leg=$('algoLegend');
     if(leg){
       leg.innerHTML = dim==='2d'
-        ? `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
-           <span><span class="r"></span> ring = a flag</span>`
+        ? `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> point = one pixel</span>
+           <span><span class="r" style="border-radius:50%;background:var(--accent);border:0;width:10px;height:10px"></span> larger dot = a flag</span>`
         : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> point = one pixel’s R, G, B</span>
            <span><span class="r" style="border-radius:50%;background:var(--accent);border:0;width:10px;height:10px"></span> larger dot = a flag</span>`;
     }
