@@ -664,43 +664,49 @@ footer.foot a{color:var(--accent);text-decoration:none}
 .algo-canvas-wrap{
   position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
   background:var(--surface);
-  aspect-ratio:16/9;
   width:100%;
-  max-height:min(70dvh, 780px);
+  aspect-ratio:16/9;
+  max-height:min(58dvh, 620px);
+  height:auto;
+  flex:0 0 auto; /* never stretch tall in a flex column */
   touch-action:none;
   cursor:grab;
 }
 .algo-canvas-wrap.is-dragging{cursor:grabbing}
 .algo-canvas-wrap canvas{
-  display:block;width:100%;height:100%;
-  object-fit:contain;
+  display:block;width:100%;height:auto;aspect-ratio:16/9;
+  vertical-align:top;
 }
-/* Immersive / fullscreen: fill the viewport, keep 16:9 drawing (no stretch) */
-.algo-canvas-wrap.is-fs,
-.algo-canvas-wrap:fullscreen,
-.algo-canvas-wrap:-webkit-full-screen{
-  position:fixed;inset:0;z-index:120;
+
+/* Fullscreen = whole stage covers the viewport (no page header peeking through) */
+.algo-stage.is-fs{
+  position:fixed;inset:0;z-index:200;
   width:100vw;width:100dvw;height:100vh;height:100dvh;
-  max-height:none;min-height:0;aspect-ratio:auto;
-  border:0;border-radius:0;
+  margin:0;border-radius:0;
+  padding:max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+          max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
-          max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   box-sizing:border-box;
+  gap:10px;
 }
-.algo-canvas-wrap.is-fs canvas,
-.algo-canvas-wrap:fullscreen canvas,
-.algo-canvas-wrap:-webkit-full-screen canvas{
-  width:min(100%, calc((100dvh - 32px) * 16 / 9));
-  height:auto;
-  max-width:100%;
-  max-height:calc(100dvh - 32px);
-  aspect-ratio:16/9;
-  object-fit:contain;
-  border-radius:0;
+.algo-stage.is-fs .algo-canvas-wrap{
+  flex:1 1 auto;
+  width:100%;
+  max-height:none;
+  min-height:0;
+  aspect-ratio:auto;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
   background:var(--surface);
 }
+.algo-stage.is-fs .algo-canvas-wrap canvas{
+  width:auto;height:auto;
+  max-width:100%;
+  max-height:100%;
+  aspect-ratio:16/9;
+  object-fit:contain;
+}
+.algo-stage.is-fs .algo-legend{display:none}
 .algo-zoom{
   position:absolute;right:12px;bottom:12px;z-index:2;
   display:flex;align-items:center;gap:4px;
@@ -727,24 +733,12 @@ footer.foot a{color:var(--accent);text-decoration:none}
   pointer-events:none;
   max-width:min(52ch, calc(100% - 180px));
 }
-.algo-canvas-wrap.is-fs .algo-hint,
-.algo-canvas-wrap:fullscreen .algo-hint,
-.algo-canvas-wrap:-webkit-full-screen .algo-hint,
-.algo-canvas-wrap.is-fs .algo-zoom,
-.algo-canvas-wrap:fullscreen .algo-zoom,
-.algo-canvas-wrap:-webkit-full-screen .algo-zoom{
-  bottom:max(16px, env(safe-area-inset-bottom));
+.algo-stage.is-fs .algo-hint,
+.algo-stage.is-fs .algo-zoom{
+  bottom:max(14px, env(safe-area-inset-bottom));
 }
-.algo-canvas-wrap.is-fs .algo-hint,
-.algo-canvas-wrap:fullscreen .algo-hint,
-.algo-canvas-wrap:-webkit-full-screen .algo-hint{
-  left:max(16px, env(safe-area-inset-left));
-}
-.algo-canvas-wrap.is-fs .algo-zoom,
-.algo-canvas-wrap:fullscreen .algo-zoom,
-.algo-canvas-wrap:-webkit-full-screen .algo-zoom{
-  right:max(16px, env(safe-area-inset-right));
-}
+.algo-stage.is-fs .algo-hint{left:max(14px, env(safe-area-inset-left))}
+.algo-stage.is-fs .algo-zoom{right:max(14px, env(safe-area-inset-right))}
 body.algo-fs-lock{overflow:hidden;touch-action:none}
 
 .algo-legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink-mute);flex-wrap:wrap}
@@ -2315,7 +2309,7 @@ function initAlgoDemo(){
     zr=y*Math.sin(rotX)+zr*Math.cos(rotX);
     const depth=2.05+zr*0.38;
     // Bigger projected cube so the cloud fills the stage
-    const base=Math.min(W,H)*0.78*zoom;
+    const base=Math.min(W,H)*0.86*zoom;
     const sc=base/depth;
     return {sx:W*0.50+xr*sc, sy:H*0.50-yr*sc, depth:zr, sc};
   }
@@ -2706,7 +2700,7 @@ function initAlgoDemo(){
   function enter3dAfterLift(){
     dim='3d';
     forceDim=null;
-    setZoom(1.4);
+    setZoom(1.55);
     syncChrome();
     // re-randomize flags for a fresh Guess in 3-D so students see the loop again
     centroids=[];
@@ -2809,7 +2803,7 @@ function initAlgoDemo(){
   function jumpTo(d){
     forceDim=d;
     cancelAnimationFrame(raf);
-    setZoom(d==='3d' ? 1.4 : 1);
+    setZoom(d==='3d' ? 1.55 : 1);
     rotY=0.55; rotX=0.32; autoSpin=true;
     resetCloud(d);
     if(reduced){
@@ -2825,8 +2819,9 @@ function initAlgoDemo(){
   $('algoMode2d')?.addEventListener('click', ()=>jumpTo('2d'));
   $('algoMode3d')?.addEventListener('click', ()=>jumpTo('3d'));
 
-  // Zoom + drag spin + fullscreen (CSS immersive + optional native API)
+  // Zoom + drag spin + fullscreen (CSS stage overlay — no native FS API)
   const wrap=$('algoCanvasWrap')||cv.parentElement;
+  const stage=wrap?.closest('.algo-stage')||wrap;
   // Keep drawing coordinates fixed — fullscreen only scales the canvas on screen
   const BASE_W=1120, BASE_H=630;
   W=BASE_W; H=BASE_H; S=W/640;
@@ -2834,16 +2829,12 @@ function initAlgoDemo(){
   $('algoZoomIn')?.addEventListener('click', ()=>setZoom(zoom*1.18));
   $('algoZoomOut')?.addEventListener('click', ()=>setZoom(zoom/1.18));
   $('algoZoomReset')?.addEventListener('click', ()=>{
-    setZoom(dim==='3d'?1.4:1);
+    setZoom(dim==='3d'?1.55:1);
     rotY=0.55; rotX=0.32; autoSpin=true;
   });
 
-  function isNativeFs(){
-    const fs=document.fullscreenElement||document.webkitFullscreenElement;
-    return fs===wrap || fs===cv;
-  }
   function isAlgoFullscreen(){
-    return !!(wrap && wrap.classList.contains('is-fs')) || isNativeFs();
+    return !!(stage && stage.classList.contains('is-fs'));
   }
   function syncFsButton(){
     const btn=$('algoFullscreen'); if(!btn)return;
@@ -2853,68 +2844,35 @@ function initAlgoDemo(){
     btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
   }
   function enterCssFs(){
-    if(!wrap || wrap.classList.contains('is-fs')) return;
-    // Hold the layout slot so the page doesn’t jump when the wrap goes fixed
-    if(!wrap.previousElementSibling || !wrap.previousElementSibling.classList?.contains('algo-fs-slot')){
+    if(!stage || stage.classList.contains('is-fs')) return;
+    if(!stage.previousElementSibling || !stage.previousElementSibling.classList?.contains('algo-fs-slot')){
       const slot=document.createElement('div');
       slot.className='algo-fs-slot';
-      slot.style.height=wrap.getBoundingClientRect().height+'px';
+      slot.style.height=stage.getBoundingClientRect().height+'px';
       slot.setAttribute('aria-hidden','true');
-      wrap.parentNode.insertBefore(slot, wrap);
+      stage.parentNode.insertBefore(slot, stage);
     }
-    wrap.classList.add('is-fs');
+    stage.classList.add('is-fs');
     document.body.classList.add('algo-fs-lock');
     syncFsButton();
   }
   function exitCssFs(){
-    if(!wrap) return;
-    wrap.classList.remove('is-fs');
+    if(!stage) return;
+    stage.classList.remove('is-fs');
     document.body.classList.remove('algo-fs-lock');
-    const slot=wrap.previousElementSibling;
+    const slot=stage.previousElementSibling;
     if(slot && slot.classList.contains('algo-fs-slot')) slot.remove();
     syncFsButton();
   }
-  async function toggleAlgoFullscreen(){
-    if(isAlgoFullscreen()){
-      exitCssFs();
-      try{
-        if(isNativeFs()){
-          if(document.exitFullscreen) await document.exitFullscreen();
-          else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-        }
-      }catch(err){ console.warn('fullscreen exit', err); }
-      return;
-    }
-    // CSS immersive mode is the reliable path (especially iPad).
-    enterCssFs();
-    const el=wrap||cv;
-    const canNative = !!(el && (el.requestFullscreen || el.webkitRequestFullscreen));
-    const isCoarse = window.matchMedia && matchMedia('(pointer:coarse)').matches;
-    // Skip native API on touch tablets — iPadOS fullscreen is often odd
-    if(canNative && !isCoarse){
-      try{
-        if(el.requestFullscreen) await el.requestFullscreen();
-        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      }catch(err){
-        console.warn('fullscreen', err);
-      }
-    }
+  function toggleAlgoFullscreen(){
+    if(isAlgoFullscreen()) exitCssFs();
+    else enterCssFs();
   }
 
   $('algoFullscreen')?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleAlgoFullscreen(); });
-  document.addEventListener('fullscreenchange', ()=>{
-    const nativeOn=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    // One Esc on desktop should leave immersive mode entirely
-    if(!nativeOn && wrap?.classList.contains('is-fs')) exitCssFs();
-    else syncFsButton();
-  });
-  document.addEventListener('webkitfullscreenchange', ()=>{
-    const nativeOn=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    if(!nativeOn && wrap?.classList.contains('is-fs')) exitCssFs();
-    else syncFsButton();
-  });
   document.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape' && wrap?.classList.contains('is-fs') && !isNativeFs()){
+    if(e.key==='Escape' && isAlgoFullscreen()){
+      e.preventDefault();
       exitCssFs();
     }
   });
