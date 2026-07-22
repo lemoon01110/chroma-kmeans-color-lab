@@ -2165,17 +2165,17 @@ function initAlgoDemo(){
       }
       for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
     }else{
-      // Three RGB clumps near different corners — spread out, not one mushy pile
+      // Three clumps near the R / G / B corners so they don’t pile in the middle
       const blobs=[
-        [240,45,35],   // red corner
-        [30,210,190],  // teal corner
-        [235,200,25],  // yellow corner
+        [230,40,40],   // red axis
+        [40,220,50],   // green axis
+        [45,55,230],   // blue axis
       ];
       blobs.forEach(([br,bg,bb])=>{
-        for(let i=0;i<16;i++){
-          const r=clampv(br+(Math.random()*2-1)*55,10,250);
-          const g=clampv(bg+(Math.random()*2-1)*55,10,250);
-          const b=clampv(bb+(Math.random()*2-1)*55,10,250);
+        for(let i=0;i<14;i++){
+          const r=clampv(br+(Math.random()*2-1)*48,8,248);
+          const g=clampv(bg+(Math.random()*2-1)*48,8,248);
+          const b=clampv(bb+(Math.random()*2-1)*48,8,248);
           const col=rgbToHex(r,g,b);
           const p2=project(r,g,b,rotY);
           pts.push({r,g,b,col, x:p2.sx, y:p2.sy, x0:p2.sx, y0:p2.sy});
@@ -2314,7 +2314,7 @@ function initAlgoDemo(){
       const k=labels[o.i];
       const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
       const baseR = dim==='3d'
-        ? (assigned?4.2:3.6)*S*clampv(Math.sqrt(zoom),0.85,1.35)
+        ? (assigned?3.4:2.9)*S*clampv(Math.sqrt(zoom),0.85,1.25)
         : (assigned?7.2:6.2)*S*clampv(zoom,0.8,1.8);
       const rad=baseR;
       ctx.beginPath();
@@ -2383,7 +2383,7 @@ function initAlgoDemo(){
     }
     visibleMeans=K;
     liftT=0;
-    setZoom(1.25);
+    setZoom(1.1);
     autoSpin=true;
     phase='lift';
     t0=performance.now();
@@ -2394,7 +2394,7 @@ function initAlgoDemo(){
   function enter3dAfterLift(){
     dim='3d';
     forceDim=null;
-    setZoom(1.3);
+    setZoom(1.15);
     syncChrome();
     // re-randomize flags for a fresh Guess in 3-D so students see the loop again
     centroids=[];
@@ -2497,7 +2497,7 @@ function initAlgoDemo(){
   function jumpTo(d){
     forceDim=d;
     cancelAnimationFrame(raf);
-    setZoom(d==='3d' ? 1.3 : 1);
+    setZoom(d==='3d' ? 1.15 : 1);
     rotY=0.55; rotX=0.32; autoSpin=true;
     resetCloud(d);
     if(reduced){
@@ -2519,7 +2519,7 @@ function initAlgoDemo(){
   $('algoZoomIn')?.addEventListener('click', ()=>setZoom(zoom*1.18));
   $('algoZoomOut')?.addEventListener('click', ()=>setZoom(zoom/1.18));
   $('algoZoomReset')?.addEventListener('click', ()=>{
-    setZoom(dim==='3d'?1.3:1);
+    setZoom(dim==='3d'?1.15:1);
     rotY=0.55; rotX=0.32; autoSpin=true;
   });
 
