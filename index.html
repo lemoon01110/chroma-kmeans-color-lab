@@ -2064,8 +2064,8 @@ function initAlgoDemo(){
       leg.innerHTML = dim==='2d'
         ? `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> colored dots = different pixels</span>
            <span><span class="r"></span> ring = a flag</span>`
-        : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> spot = that pixel’s R, G, B mix</span>
-           <span><span class="r"></span> ring = a flag in the cube</span>`;
+        : `<span><span class="dots" aria-hidden="true"><span class="d d1"></span><span class="d d2"></span><span class="d d3"></span></span> small sphere = one pixel’s R, G, B</span>
+           <span><span class="r" style="border-radius:50%;background:var(--accent);border:0;width:11px;height:11px"></span> big sphere = a flag</span>`;
     }
     syncZoomUI();
   }
@@ -2263,6 +2263,46 @@ function initAlgoDemo(){
     return map2d(c.x, c.y);
   }
 
+  function shadeHex(hex, amt){
+    const {r,g,b}=hexToRgb(hex);
+    const f=c=>clampv((c+amt)|0,0,255);
+    return rgbToHex(f(r),f(g),f(b));
+  }
+
+  // Soft lit ball so 3-D reads as spheres, not flat discs
+  function drawBall(x, y, rad, hex, {alpha=1, rim=null}={}){
+    if(rad<0.4) return;
+    const g=ctx.createRadialGradient(
+      x-rad*0.38, y-rad*0.42, Math.max(0.4, rad*0.08),
+      x+rad*0.1, y+rad*0.15, rad
+    );
+    g.addColorStop(0, shadeHex(hex, 70));
+    g.addColorStop(0.4, hex);
+    g.addColorStop(1, shadeHex(hex, -85));
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, 7);
+    ctx.fillStyle=g;
+    ctx.globalAlpha=alpha;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x-rad*0.32, y-rad*0.36, Math.max(0.6, rad*0.22), 0, 7);
+    ctx.fillStyle='rgba(255,255,255,0.42)';
+    ctx.fill();
+    if(rim){
+      ctx.beginPath();
+      ctx.arc(x, y, rad+0.8*S, 0, 7);
+      ctx.lineWidth=1.5*S;
+      ctx.strokeStyle=rim;
+      ctx.globalAlpha=0.85;
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  function depthScale(depth){
+    return clampv(0.78 + (depth+1)*0.22, 0.65, 1.25);
+  }
+
   function draw(){
     const cols=themeCols();
     const angle=rotY;
@@ -2281,10 +2321,9 @@ function initAlgoDemo(){
       drawAxes3d(angle);
     }
 
-    // links
     if((phase==='assign'||phase==='update') && visibleMeans>0){
       ctx.save();
-      ctx.globalAlpha=0.14; ctx.lineWidth=1.25*S;
+      ctx.globalAlpha=dim==='3d'?0.1:0.14; ctx.lineWidth=1.1*S;
       for(let i=0;i<pts.length;i++){
         const k=labels[i]; if(k<0||k>=visibleMeans) continue;
         const a=screenPos(pts[i],angle,liftT);
@@ -2295,7 +2334,6 @@ function initAlgoDemo(){
       ctx.restore();
     }
 
-    // trails
     for(const t of trails){
       ctx.save();
       ctx.globalAlpha=t.a; ctx.strokeStyle=cols[t.k]; ctx.lineWidth=2.4*S;
@@ -2305,54 +2343,91 @@ function initAlgoDemo(){
     }
     trails=trails.filter(t=>t.a>0.04);
 
-    // depth-sort points in 3d
-    const order=pts.map((p,i)=>({i, ...screenPos(p,angle,liftT)}));
-    order.sort((a,b)=>a.depth-b.depth);
+    const in3d = dim==='3d' || phase==='lift';
 
-    for(const o of order){
-      const p=pts[o.i];
-      const k=labels[o.i];
-      const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
-      const baseR = dim==='3d'
-        ? (assigned?2.4:1.9)*S
-        : (assigned?7.2:6.2)*S*clampv(zoom,0.8,1.8);
-      const rad=baseR;
-      ctx.beginPath();
-      ctx.arc(o.sx, o.sy, rad, 0, 7);
-      ctx.fillStyle=p.col;
-      ctx.globalAlpha=dim==='3d' ? 0.98 : 0.92;
-      ctx.fill();
-      if(assigned){
-        ctx.lineWidth=(dim==='3d'?1.4:2.4)*S; ctx.strokeStyle=cols[k]; ctx.stroke();
+    if(in3d){
+      // Depth-sorted lit spheres: small = pixels, larger = flags
+      const sprites=[];
+      for(let i=0;i<pts.length;i++){
+        const o=screenPos(pts[i],angle,liftT);
+        const k=labels[i];
+        const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
+        sprites.push({
+          depth:o.depth, x:o.sx, y:o.sy,
+          rad:2.05*S*depthScale(o.depth),
+          col:pts[i].col, rim:assigned?cols[k]:null, kind:'pt'
+        });
       }
-      ctx.globalAlpha=1;
+      for(let k=0;k<visibleMeans;k++){
+        const c=centroids[k];
+        const s=centroidScreen(c,angle);
+        let pop=1;
+        if(phase==='guess' && k===visibleMeans-1){
+          const age=(performance.now()-t0)/380;
+          pop=age<1?0.35+0.65*Math.min(1,age):1;
+        }
+        const ringCol=c.col||cols[k];
+        sprites.push({
+          depth:s.depth+0.002, x:s.sx, y:s.sy,
+          rad:7.2*S*depthScale(s.depth)*pop,
+          col:ringCol, kind:'flag', label:'μ'+(k+1)
+        });
+      }
+      sprites.sort((a,b)=>a.depth-b.depth);
+      for(const sp of sprites){
+        if(sp.kind==='flag'){
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, sp.rad*1.55, 0, 7);
+          ctx.fillStyle=sp.col;
+          ctx.globalAlpha=0.16;
+          ctx.fill();
+          ctx.globalAlpha=1;
+          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:0.98});
+          ctx.font=`700 ${Math.round(12*S)}px ui-monospace,monospace`;
+          ctx.fillStyle=sp.col;
+          ctx.fillText(sp.label, sp.x+sp.rad+4*S, sp.y-sp.rad*0.2);
+        }else{
+          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:0.96, rim:sp.rim});
+        }
+      }
+    }else{
+      for(let i=0;i<pts.length;i++){
+        const o=screenPos(pts[i],angle,liftT);
+        const k=labels[i];
+        const assigned=k>=0 && visibleMeans>0 && phase!=='seed';
+        const rad=(assigned?7.2:6.2)*S*clampv(zoom,0.8,1.8);
+        ctx.beginPath();
+        ctx.arc(o.sx, o.sy, rad, 0, 7);
+        ctx.fillStyle=pts[i].col;
+        ctx.globalAlpha=0.92;
+        ctx.fill();
+        if(assigned){
+          ctx.lineWidth=2.4*S; ctx.strokeStyle=cols[k]; ctx.stroke();
+        }
+        ctx.globalAlpha=1;
+      }
+      for(let k=0;k<visibleMeans;k++){
+        const c=centroids[k];
+        const s=centroidScreen(c,angle);
+        let scale=1;
+        if(phase==='guess' && k===visibleMeans-1){
+          const age=(performance.now()-t0)/380;
+          scale=age<1?0.35+0.65*Math.min(1,age):1;
+        }
+        const R=18*S*scale*clampv(zoom*0.55,0.85,1.8);
+        ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
+        ctx.fillStyle=cols[k]; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
+        ctx.beginPath(); ctx.arc(s.sx,s.sy,R,0,7);
+        ctx.lineWidth=4.2*S; ctx.strokeStyle=cols[k]; ctx.stroke();
+        ctx.beginPath(); ctx.arc(s.sx,s.sy,4.6*S,0,7);
+        ctx.fillStyle=cols[k]; ctx.fill();
+        ctx.font=`700 ${Math.round(13*S)}px ui-monospace,monospace`;
+        ctx.fillStyle=cols[k];
+        ctx.fillText('μ'+(k+1), s.sx+R+5*S, s.sy-R+2);
+      }
     }
 
-    // means
-    for(let k=0;k<visibleMeans;k++){
-      const c=centroids[k];
-      const s=centroidScreen(c,angle);
-      let scale=1;
-      if(phase==='guess' && k===visibleMeans-1){
-        const age=(performance.now()-t0)/380;
-        scale=age<1?0.35+0.65*Math.min(1,age):1;
-      }
-      const R = dim==='3d'
-        ? 9*S*scale
-        : 18*S*scale*clampv(zoom*0.55,0.85,1.8);
-      const ringCol = (dim==='3d' && c.col) ? c.col : cols[k];
-      ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
-      ctx.fillStyle=ringCol; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
-      ctx.beginPath(); ctx.arc(s.sx,s.sy,R,0,7);
-      ctx.lineWidth=4.2*S; ctx.strokeStyle=ringCol; ctx.stroke();
-      ctx.beginPath(); ctx.arc(s.sx,s.sy,4.6*S,0,7);
-      ctx.fillStyle=ringCol; ctx.fill();
-      ctx.font=`700 ${Math.round(13*S)}px ui-monospace,monospace`;
-      ctx.fillStyle=ringCol;
-      ctx.fillText('μ'+(k+1), s.sx+R+5*S, s.sy-R+2);
-    }
-
-    if(dim==='3d' || phase==='lift'){
+    if(in3d){
       ctx.fillStyle=inkMute();
       ctx.font=`600 ${Math.round(13*S)}px ui-monospace,monospace`;
       ctx.globalAlpha=0.75;
