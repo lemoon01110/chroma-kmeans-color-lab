@@ -665,22 +665,41 @@ footer.foot a{color:var(--accent);text-decoration:none}
   position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
   background:var(--surface);
   aspect-ratio:16/9;
-  min-height:clamp(320px, 55dvh, 720px);
+  width:100%;
   max-height:min(70dvh, 780px);
   touch-action:none;
   cursor:grab;
 }
 .algo-canvas-wrap.is-dragging{cursor:grabbing}
-.algo-canvas-wrap canvas{display:block;width:100%;height:100%}
+.algo-canvas-wrap canvas{
+  display:block;width:100%;height:100%;
+  object-fit:contain;
+}
+/* Immersive / fullscreen: fill the viewport, keep 16:9 drawing (no stretch) */
+.algo-canvas-wrap.is-fs,
 .algo-canvas-wrap:fullscreen,
 .algo-canvas-wrap:-webkit-full-screen{
-  width:100vw;height:100vh;height:100dvh;
+  position:fixed;inset:0;z-index:120;
+  width:100vw;width:100dvw;height:100vh;height:100dvh;
   max-height:none;min-height:0;aspect-ratio:auto;
-  border:0;border-radius:0;background:var(--bg, #121311);
+  border:0;border-radius:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  box-sizing:border-box;
 }
+.algo-canvas-wrap.is-fs canvas,
 .algo-canvas-wrap:fullscreen canvas,
 .algo-canvas-wrap:-webkit-full-screen canvas{
-  width:100%;height:100%;object-fit:contain;
+  width:min(100%, calc((100dvh - 32px) * 16 / 9));
+  height:auto;
+  max-width:100%;
+  max-height:calc(100dvh - 32px);
+  aspect-ratio:16/9;
+  object-fit:contain;
+  border-radius:0;
+  background:var(--surface);
 }
 .algo-zoom{
   position:absolute;right:12px;bottom:12px;z-index:2;
@@ -708,31 +727,26 @@ footer.foot a{color:var(--accent);text-decoration:none}
   pointer-events:none;
   max-width:min(52ch, calc(100% - 180px));
 }
+.algo-canvas-wrap.is-fs .algo-hint,
 .algo-canvas-wrap:fullscreen .algo-hint,
 .algo-canvas-wrap:-webkit-full-screen .algo-hint,
+.algo-canvas-wrap.is-fs .algo-zoom,
 .algo-canvas-wrap:fullscreen .algo-zoom,
 .algo-canvas-wrap:-webkit-full-screen .algo-zoom{
   bottom:max(16px, env(safe-area-inset-bottom));
 }
+.algo-canvas-wrap.is-fs .algo-hint,
 .algo-canvas-wrap:fullscreen .algo-hint,
 .algo-canvas-wrap:-webkit-full-screen .algo-hint{
   left:max(16px, env(safe-area-inset-left));
 }
+.algo-canvas-wrap.is-fs .algo-zoom,
 .algo-canvas-wrap:fullscreen .algo-zoom,
 .algo-canvas-wrap:-webkit-full-screen .algo-zoom{
   right:max(16px, env(safe-area-inset-right));
 }
+body.algo-fs-lock{overflow:hidden;touch-action:none}
 
-/* Browser F11 / display fullscreen: stop sticky chrome from covering the movie */
-@media (display-mode: fullscreen){
-  .vocab{position:static}
-  .sidebar{position:static}
-  .algo-canvas-wrap{
-    max-height:none;
-    min-height:min(78vh, 900px);
-  }
-  .wrap{padding-top:16px;padding-bottom:24px}
-}
 .algo-legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink-mute);flex-wrap:wrap}
 .algo-legend span{display:inline-flex;align-items:center;gap:7px}
 .algo-legend .dots{display:inline-flex;gap:4px;align-items:center}
@@ -2811,8 +2825,11 @@ function initAlgoDemo(){
   $('algoMode2d')?.addEventListener('click', ()=>jumpTo('2d'));
   $('algoMode3d')?.addEventListener('click', ()=>jumpTo('3d'));
 
-  // Zoom + drag spin + fullscreen
+  // Zoom + drag spin + fullscreen (CSS immersive + optional native API)
   const wrap=$('algoCanvasWrap')||cv.parentElement;
+  // Keep drawing coordinates fixed — fullscreen only scales the canvas on screen
+  const BASE_W=1120, BASE_H=630;
+  W=BASE_W; H=BASE_H; S=W/640;
 
   $('algoZoomIn')?.addEventListener('click', ()=>setZoom(zoom*1.18));
   $('algoZoomOut')?.addEventListener('click', ()=>setZoom(zoom/1.18));
@@ -2821,9 +2838,12 @@ function initAlgoDemo(){
     rotY=0.55; rotX=0.32; autoSpin=true;
   });
 
-  function isAlgoFullscreen(){
+  function isNativeFs(){
     const fs=document.fullscreenElement||document.webkitFullscreenElement;
     return fs===wrap || fs===cv;
+  }
+  function isAlgoFullscreen(){
+    return !!(wrap && wrap.classList.contains('is-fs')) || isNativeFs();
   }
   function syncFsButton(){
     const btn=$('algoFullscreen'); if(!btn)return;
@@ -2832,52 +2852,72 @@ function initAlgoDemo(){
     btn.title = on ? 'Exit fullscreen' : 'Fullscreen';
     btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
   }
+  function enterCssFs(){
+    if(!wrap || wrap.classList.contains('is-fs')) return;
+    // Hold the layout slot so the page doesn’t jump when the wrap goes fixed
+    if(!wrap.previousElementSibling || !wrap.previousElementSibling.classList?.contains('algo-fs-slot')){
+      const slot=document.createElement('div');
+      slot.className='algo-fs-slot';
+      slot.style.height=wrap.getBoundingClientRect().height+'px';
+      slot.setAttribute('aria-hidden','true');
+      wrap.parentNode.insertBefore(slot, wrap);
+    }
+    wrap.classList.add('is-fs');
+    document.body.classList.add('algo-fs-lock');
+    syncFsButton();
+  }
+  function exitCssFs(){
+    if(!wrap) return;
+    wrap.classList.remove('is-fs');
+    document.body.classList.remove('algo-fs-lock');
+    const slot=wrap.previousElementSibling;
+    if(slot && slot.classList.contains('algo-fs-slot')) slot.remove();
+    syncFsButton();
+  }
   async function toggleAlgoFullscreen(){
-    try{
-      if(isAlgoFullscreen()){
-        if(document.exitFullscreen) await document.exitFullscreen();
-        else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-      }else{
-        const el=wrap||cv;
+    if(isAlgoFullscreen()){
+      exitCssFs();
+      try{
+        if(isNativeFs()){
+          if(document.exitFullscreen) await document.exitFullscreen();
+          else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      }catch(err){ console.warn('fullscreen exit', err); }
+      return;
+    }
+    // CSS immersive mode is the reliable path (especially iPad).
+    enterCssFs();
+    const el=wrap||cv;
+    const canNative = !!(el && (el.requestFullscreen || el.webkitRequestFullscreen));
+    const isCoarse = window.matchMedia && matchMedia('(pointer:coarse)').matches;
+    // Skip native API on touch tablets — iPadOS fullscreen is often odd
+    if(canNative && !isCoarse){
+      try{
         if(el.requestFullscreen) await el.requestFullscreen();
         else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }catch(err){
+        console.warn('fullscreen', err);
       }
-    }catch(err){ console.warn('fullscreen', err); }
-  }
-  function fitCanvasToWrap(){
-    const box=(wrap||cv).getBoundingClientRect();
-    const dpr=Math.min(window.devicePixelRatio||1, 2);
-    const prevW=W, prevH=H;
-    if(isAlgoFullscreen()){
-      const cssW=Math.max(320, Math.floor(box.width));
-      const cssH=Math.max(200, Math.floor(box.height));
-      cv.width=Math.round(cssW*dpr);
-      cv.height=Math.round(cssH*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      W=cssW; H=cssH;
-    }else{
-      ctx.setTransform(1,0,0,1,0,0);
-      if(cv.width!==1120 || cv.height!==630){ cv.width=1120; cv.height=630; }
-      W=1120; H=630;
-    }
-    S=W/640;
-    // Keep 2-D dots in frame when the canvas size changes (fullscreen on/off)
-    if(prevW>0 && prevH>0 && (W!==prevW || H!==prevH) && dim==='2d'){
-      const sx=W/prevW, sy=H/prevH;
-      pts.forEach(p=>{
-        p.x*=sx; p.y*=sy;
-        if(p.x0!=null){ p.x0*=sx; p.y0*=sy; }
-      });
-      centroids.forEach(c=>{
-        if(c.x!=null){ c.x*=sx; c.y*=sy; }
-      });
     }
   }
 
   $('algoFullscreen')?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleAlgoFullscreen(); });
-  document.addEventListener('fullscreenchange', ()=>{ fitCanvasToWrap(); syncFsButton(); });
-  document.addEventListener('webkitfullscreenchange', ()=>{ fitCanvasToWrap(); syncFsButton(); });
-  window.addEventListener('resize', ()=>{ if(isAlgoFullscreen()) fitCanvasToWrap(); });
+  document.addEventListener('fullscreenchange', ()=>{
+    const nativeOn=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    // One Esc on desktop should leave immersive mode entirely
+    if(!nativeOn && wrap?.classList.contains('is-fs')) exitCssFs();
+    else syncFsButton();
+  });
+  document.addEventListener('webkitfullscreenchange', ()=>{
+    const nativeOn=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    if(!nativeOn && wrap?.classList.contains('is-fs')) exitCssFs();
+    else syncFsButton();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape' && wrap?.classList.contains('is-fs') && !isNativeFs()){
+      exitCssFs();
+    }
+  });
   syncFsButton();
 
   wrap?.addEventListener('wheel', (e)=>{
