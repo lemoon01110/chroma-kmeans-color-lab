@@ -1216,7 +1216,7 @@ body.algo-fs-lock{overflow:hidden;touch-action:none}
               <div class="exp-btns">
                 <button class="btn small" id="expPosterize" title="Only allow 4 colors">Only 4 colors</button>
                 <button class="btn small" id="expRandom" title="New random start">New random start</button>
-                <button class="btn small" id="expLab" title="Group pixels using the LAB ruler">Switch to LAB</button>
+                <button class="btn small" id="expRuler" title="Flip the ruler between RGB and LAB">Switch to LAB</button>
               </div>
             </div>
             <div class="divider"></div>
@@ -1921,6 +1921,7 @@ function setInit(m){
   state.init=m;
   $('initPP').setAttribute('aria-pressed',m==='kmeanspp');
   $('initRandom').setAttribute('aria-pressed',m==='random');
+  syncVocab();
   if(state.img)scheduleCompute(false);
 }
 $('initPP').addEventListener('click',()=>setInit('kmeanspp'));
@@ -2941,30 +2942,41 @@ const MISSIONS=[
     n:'1',
     tab:'Few colors',
     title:'What if K is too small?',
-    goal:'The Dusk photo has lots of smooth blends. With only K=4 flags in RGB, many different colors get forced onto the same team — so the sky turns into flat poster bands.',
-    tip:'Try raising K. More flags can cover more of the blend. You’re still grouping RGB numbers — you just allow more team centers.',
+    goal:'The Dusk photo has lots of smooth blends. With only K=4 flags, many different colors get forced onto the same team — so the sky turns into flat poster bands.',
+    tip(state){
+      const ruler = state.colorSpace==='lab' ? 'LAB' : 'RGB';
+      return `Try raising K. More flags can cover more of the blend. You’re grouping with the ${ruler} ruler — you just allow more team centers.`;
+    },
     sample:'dusk', K:4, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['photo','Dusk'],['ruler','RGB'],['K','4']]
+    chipKeys:['photo','ruler','K']
   },
   {
     id:'distance',
     n:'2',
     tab:'Nearness',
     title:'Same pixels, different ruler',
-    goal:'Bloom still starts as RGB pixels, but we group them in LAB. LAB remixes each mix into Lightness + color axes so “close” matches eyes better. Flip back to RGB — K stays 8, but teams can change.',
-    tip:'Watch greens and pinks when you switch rulers. If LAB looks cleaner, you’ve seen why a second map can help — even though screens only draw RGB.',
+    goal:'Bloom still starts as RGB pixels, but we group them with a ruler you can flip. LAB remixes each mix into Lightness + color axes so “close” matches eyes better. Same K, different teams when the ruler changes.',
+    tip(state){
+      if(state.colorSpace==='lab'){
+        return 'You’re on LAB now. Flip to RGB (same K) and watch greens and pinks — if LAB looked cleaner, you’ve seen why a second map can help.';
+      }
+      return 'You’re on RGB now. Flip to LAB (same K) and watch greens and pinks — if LAB looks cleaner, you’ve seen why a second map can help.';
+    },
     sample:'bloom', K:8, colorSpace:'lab', init:'kmeanspp',
-    chips:[['photo','Bloom'],['ruler','LAB'],['try','switch to RGB']]
+    chipKeys:['photo','ruler','try']
   },
   {
     id:'random',
     n:'3',
     tab:'Lucky start',
     title:'Different guesses, different endings',
-    goal:'Grove groups in RGB with random first flags. The pixels never change — only the starting Guess does. Hit New Guess a few times and the green teams can settle differently.',
-    tip:'Nobody labeled the “right” green. Same colors, different lucky starts → different answers. Try k-means++ for calmer starts.',
+    goal:'Grove groups with random first flags. The pixels never change — only the starting Guess does. Hit New Guess a few times and the green teams can settle differently.',
+    tip(state){
+      const start = state.init==='random' ? 'random' : 'k-means++';
+      return `Nobody labeled the “right” green. Same colors, different lucky starts → different answers. You’re on ${start} starts — try the other for comparison.`;
+    },
     sample:'grove', K:6, colorSpace:'rgb', init:'random',
-    chips:[['photo','Grove'],['ruler','RGB'],['start','random']]
+    chipKeys:['photo','ruler','start']
   },
   {
     id:'free',
@@ -2972,13 +2984,47 @@ const MISSIONS=[
     tab:'Free play',
     title:'Your turn',
     goal:'Use any photo. Pixels are always RGB; RGB/LAB only picks the ruler for Assign and Update. Change K, flip the ruler, press Play, then save the palette if you want.',
-    tip:'Change one thing at a time — K, or RGB↔LAB — so you can tell which change moved the teams.',
+    tip(){
+      return 'Change one thing at a time — K, or RGB↔LAB — so you can tell which change moved the teams.';
+    },
     sample:null, K:8, colorSpace:'rgb', init:'kmeanspp',
-    chips:[['mode','sandbox'],['pixels','always RGB'],['ruler','your pick']]
+    chipKeys:['mode','pixels','ruler']
   }
 ];
 
 let lesson={missionId:'posterize'};
+
+function missionChips(m){
+  const lab = state.colorSpace==='lab';
+  const other = lab ? 'RGB' : 'LAB';
+  const map={
+    photo: ['photo', m.sample ? m.sample[0].toUpperCase()+m.sample.slice(1) : 'yours'],
+    ruler: ['ruler', lab ? 'LAB' : 'RGB'],
+    K: ['K', String(state.K)],
+    try: ['try', 'switch to '+other],
+    start: ['start', state.init==='random' ? 'random' : 'k-means++'],
+    mode: ['mode', 'sandbox'],
+    pixels: ['pixels', 'always RGB'],
+  };
+  // Fix photo names for known samples
+  if(m.sample){
+    const names={dusk:'Dusk',bloom:'Bloom',grove:'Grove',reef:'Reef'};
+    map.photo=['photo', names[m.sample]||m.sample];
+  }
+  if(m.id==='free') map.ruler=['ruler', lab ? 'LAB (your pick)' : 'RGB (your pick)'];
+  return (m.chipKeys||[]).map(k=>map[k]).filter(Boolean);
+}
+
+function syncExpControls(){
+  const btn=$('expRuler');
+  if(btn){
+    const lab = state.colorSpace==='lab';
+    btn.textContent = lab ? 'Switch to RGB' : 'Switch to LAB';
+    btn.title = lab
+      ? 'Group pixels using the RGB ruler'
+      : 'Group pixels using the LAB ruler';
+  }
+}
 
 function syncVocab(){
   const lab = state.colorSpace==='lab';
@@ -2999,6 +3045,9 @@ function syncVocab(){
   ['stageRuler','palRuler','learnRuler'].forEach(id=>{
     const el=$(id); if(el) el.textContent = name;
   });
+  syncExpControls();
+  // Keep mission tip/chips honest about the live ruler / K / init
+  if(typeof renderMissionChrome==='function' && lesson) renderMissionChrome({soft:true});
 }
 
 function setPhaseUI({playing, hasHistory, frame, atEnd, converged}){
@@ -3055,16 +3104,20 @@ function buildMissionTabs(){
   });
 }
 
-function renderMissionChrome(){
+function renderMissionChrome(opts){
   const m=currentMission();
-  $('missionMark').textContent=m.n;
-  $('missionTitle').textContent=m.title;
-  $('missionGoal').textContent=m.goal;
+  const soft=opts&&opts.soft;
+  if(!soft){
+    $('missionMark').textContent=m.n;
+    $('missionTitle').textContent=m.title;
+    $('missionGoal').textContent=typeof m.goal==='function' ? m.goal(state) : m.goal;
+  }
   const tip=$('missionTip');
-  if(m.tip){ tip.textContent=m.tip; tip.classList.remove('hidden'); }
+  const tipText = typeof m.tip==='function' ? m.tip(state) : (m.tip||'');
+  if(tipText){ tip.textContent=tipText; tip.classList.remove('hidden'); }
   else{ tip.textContent=''; tip.classList.add('hidden'); }
   const meta=$('missionMeta'); meta.innerHTML='';
-  (m.chips||[]).forEach(([k,v])=>{
+  missionChips(m).forEach(([k,v])=>{
     const s=document.createElement('span'); s.className='mchip';
     s.innerHTML=`${k} <strong>${v}</strong>`;
     meta.appendChild(s);
@@ -3136,7 +3189,9 @@ $('missionNextBtn').addEventListener('click',()=>nextMission(1));
 $('missionPrevBtn').addEventListener('click',()=>nextMission(-1));
 $('expPosterize').addEventListener('click',()=>{setK(4,true);});
 $('expRandom').addEventListener('click',()=>{setInit('random');state.seed=(Math.random()*1e9)|0;if(state.img)scheduleCompute(true);});
-$('expLab').addEventListener('click',()=>setColorSpace('lab'));
+$('expRuler').addEventListener('click',()=>{
+  setColorSpace(state.colorSpace==='lab' ? 'rgb' : 'lab');
+});
 syncVocab();
 setPhaseUI({playing:false,hasHistory:false,frame:0,atEnd:false,converged:false});
 // auto-start the first curriculum mission so the lab isn't an empty dropzone
