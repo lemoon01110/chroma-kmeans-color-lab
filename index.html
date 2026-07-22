@@ -2272,28 +2272,38 @@ function initAlgoDemo(){
   // Soft lit ball so 3-D reads as spheres, not flat discs
   function drawBall(x, y, rad, hex, {alpha=1, rim=null}={}){
     if(rad<0.4) return;
+    // body: bright highlight → mid → deep shade (classic sphere cue)
     const g=ctx.createRadialGradient(
-      x-rad*0.38, y-rad*0.42, Math.max(0.4, rad*0.08),
-      x+rad*0.1, y+rad*0.15, rad
+      x-rad*0.45, y-rad*0.48, Math.max(0.3, rad*0.04),
+      x+rad*0.15, y+rad*0.2, rad*1.05
     );
-    g.addColorStop(0, shadeHex(hex, 70));
-    g.addColorStop(0.4, hex);
-    g.addColorStop(1, shadeHex(hex, -85));
+    g.addColorStop(0, shadeHex(hex, 95));
+    g.addColorStop(0.28, shadeHex(hex, 25));
+    g.addColorStop(0.62, hex);
+    g.addColorStop(1, shadeHex(hex, -110));
     ctx.beginPath();
     ctx.arc(x, y, rad, 0, 7);
     ctx.fillStyle=g;
     ctx.globalAlpha=alpha;
     ctx.fill();
+    // tight specular sparkle
     ctx.beginPath();
-    ctx.arc(x-rad*0.32, y-rad*0.36, Math.max(0.6, rad*0.22), 0, 7);
-    ctx.fillStyle='rgba(255,255,255,0.42)';
+    ctx.arc(x-rad*0.38, y-rad*0.4, Math.max(0.5, rad*0.18), 0, 7);
+    ctx.fillStyle='rgba(255,255,255,0.55)';
     ctx.fill();
+    // dark terminator edge for roundness
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, 7);
+    ctx.lineWidth=Math.max(0.8, rad*0.12);
+    ctx.strokeStyle=shadeHex(hex, -130);
+    ctx.globalAlpha=alpha*0.35;
+    ctx.stroke();
     if(rim){
       ctx.beginPath();
-      ctx.arc(x, y, rad+0.8*S, 0, 7);
-      ctx.lineWidth=1.5*S;
+      ctx.arc(x, y, rad+1.1*S, 0, 7);
+      ctx.lineWidth=1.4*S;
       ctx.strokeStyle=rim;
-      ctx.globalAlpha=0.85;
+      ctx.globalAlpha=0.75;
       ctx.stroke();
     }
     ctx.globalAlpha=1;
@@ -2376,18 +2386,12 @@ function initAlgoDemo(){
       sprites.sort((a,b)=>a.depth-b.depth);
       for(const sp of sprites){
         if(sp.kind==='flag'){
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, sp.rad*1.55, 0, 7);
-          ctx.fillStyle=sp.col;
-          ctx.globalAlpha=0.16;
-          ctx.fill();
-          ctx.globalAlpha=1;
-          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:0.98});
+          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:1});
           ctx.font=`700 ${Math.round(12*S)}px ui-monospace,monospace`;
           ctx.fillStyle=sp.col;
           ctx.fillText(sp.label, sp.x+sp.rad+4*S, sp.y-sp.rad*0.2);
         }else{
-          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:0.96, rim:sp.rim});
+          drawBall(sp.x, sp.y, sp.rad, sp.col, {alpha:0.98, rim:sp.rim});
         }
       }
     }else{
