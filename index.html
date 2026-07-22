@@ -2314,16 +2314,16 @@ function initAlgoDemo(){
       const k=labels[o.i];
       const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
       const baseR = dim==='3d'
-        ? (assigned?3.4:2.9)*S*clampv(Math.sqrt(zoom),0.85,1.25)
+        ? (assigned?2.4:1.9)*S
         : (assigned?7.2:6.2)*S*clampv(zoom,0.8,1.8);
       const rad=baseR;
       ctx.beginPath();
       ctx.arc(o.sx, o.sy, rad, 0, 7);
       ctx.fillStyle=p.col;
-      ctx.globalAlpha=0.92;
+      ctx.globalAlpha=dim==='3d' ? 0.98 : 0.92;
       ctx.fill();
       if(assigned){
-        ctx.lineWidth=2.4*S; ctx.strokeStyle=cols[k]; ctx.stroke();
+        ctx.lineWidth=(dim==='3d'?1.4:2.4)*S; ctx.strokeStyle=cols[k]; ctx.stroke();
       }
       ctx.globalAlpha=1;
     }
@@ -2338,7 +2338,7 @@ function initAlgoDemo(){
         scale=age<1?0.35+0.65*Math.min(1,age):1;
       }
       const R = dim==='3d'
-        ? 12*S*scale*clampv(Math.sqrt(zoom),0.85,1.4)
+        ? 9*S*scale
         : 18*S*scale*clampv(zoom*0.55,0.85,1.8);
       const ringCol = (dim==='3d' && c.col) ? c.col : cols[k];
       ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
