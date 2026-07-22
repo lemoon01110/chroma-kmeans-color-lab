@@ -2324,7 +2324,7 @@ function initAlgoDemo(){
         const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
         sprites.push({
           depth:o.depth, x:o.sx, y:o.sy,
-          rad:2.35*S*depthScale(o.depth),
+          rad:4.2*S*depthScale(o.depth),
           col:pts[i].col, rim:assigned?cols[k]:null, kind:'pt'
         });
       }
@@ -2339,7 +2339,7 @@ function initAlgoDemo(){
         const ringCol=c.col||cols[k];
         sprites.push({
           depth:s.depth+0.002, x:s.sx, y:s.sy,
-          rad:5.2*S*depthScale(s.depth)*pop,
+          rad:7.5*S*depthScale(s.depth)*pop,
           col:ringCol, kind:'flag', label:'μ'+(k+1)
         });
       }
