@@ -2146,11 +2146,16 @@ function initAlgoDemo(){
     phase='seed'; t0=performance.now();
 
     if(dim==='2d'){
-      const blobs=[[W*0.26,H*0.36,cols[0]],[W*0.74,H*0.32,cols[1]],[W*0.50,H*0.72,cols[2]]];
+      // Three spread-out clumps (same idea as 3-D: readable, not one mush)
+      const blobs=[
+        [W*0.22, H*0.30, cols[0]],
+        [W*0.78, H*0.28, cols[1]],
+        [W*0.50, H*0.76, cols[2]],
+      ];
       blobs.forEach(([bx,by,base])=>{
-        for(let i=0;i<22;i++){
-          const x=clampv(bx+(Math.random()+Math.random()+Math.random()-1.5)*W*0.09,18,W-18);
-          const y=clampv(by+(Math.random()+Math.random()+Math.random()-1.5)*W*0.09,18,H-18);
+        for(let i=0;i<16;i++){
+          const x=clampv(bx+(Math.random()+Math.random()+Math.random()-1.5)*W*0.11,22,W-22);
+          const y=clampv(by+(Math.random()+Math.random()+Math.random()-1.5)*H*0.11,22,H-22);
           const col=jitterHex(base,34);
           const rgb=hexToRgb(col);
           pts.push({x,y, ...rgb, col, x0:x, y0:y});
@@ -2160,7 +2165,7 @@ function initAlgoDemo(){
       for(let i=0;i<10;i++){
         const col=jitterHex(stray[i%stray.length],22);
         const rgb=hexToRgb(col);
-        const x=rand(24,W-24), y=rand(24,H-24);
+        const x=rand(28,W-28), y=rand(28,H-28);
         pts.push({x,y, ...rgb, col, x0:x, y0:y});
       }
       for(let k=0;k<K;k++) centroids.push({x:rand(W*0.12,W*0.88), y:rand(H*0.14,H*0.86)});
@@ -2315,16 +2320,18 @@ function initAlgoDemo(){
 
     const in3d = dim==='3d' || phase==='lift';
 
-    if(in3d){
-      // Simple flat points + compact flag markers (readable, not shiny balls)
+    // Shared look: simple flat points + solid flag dots (2-D and 3-D)
+    {
       const sprites=[];
       for(let i=0;i<pts.length;i++){
         const o=screenPos(pts[i],angle,liftT);
         const k=labels[i];
         const assigned=k>=0 && visibleMeans>0 && phase!=='lift' && phase!=='seed';
+        const rad = in3d
+          ? 4.2*S*depthScale(o.depth)
+          : 4.4*S*clampv(zoom,0.85,1.8);
         sprites.push({
-          depth:o.depth, x:o.sx, y:o.sy,
-          rad:4.2*S*depthScale(o.depth),
+          depth:o.depth, x:o.sx, y:o.sy, rad,
           col:pts[i].col, rim:assigned?cols[k]:null, kind:'pt'
         });
       }
@@ -2336,14 +2343,16 @@ function initAlgoDemo(){
           const age=(performance.now()-t0)/380;
           pop=age<1?0.35+0.65*Math.min(1,age):1;
         }
-        const ringCol=c.col||cols[k];
+        const flagCol = in3d ? (c.col||cols[k]) : cols[k];
+        const rad = in3d
+          ? 7.5*S*depthScale(s.depth)*pop
+          : 7.8*S*clampv(zoom,0.85,1.8)*pop;
         sprites.push({
-          depth:s.depth+0.002, x:s.sx, y:s.sy,
-          rad:7.5*S*depthScale(s.depth)*pop,
-          col:ringCol, kind:'flag', label:'μ'+(k+1)
+          depth:s.depth+0.002, x:s.sx, y:s.sy, rad,
+          col:flagCol, kind:'flag', label:'μ'+(k+1)
         });
       }
-      sprites.sort((a,b)=>a.depth-b.depth);
+      if(in3d) sprites.sort((a,b)=>a.depth-b.depth);
       for(const sp of sprites){
         if(sp.kind==='flag'){
           ctx.beginPath();
@@ -2371,41 +2380,6 @@ function initAlgoDemo(){
           }
           ctx.globalAlpha=1;
         }
-      }
-    }else{
-      for(let i=0;i<pts.length;i++){
-        const o=screenPos(pts[i],angle,liftT);
-        const k=labels[i];
-        const assigned=k>=0 && visibleMeans>0 && phase!=='seed';
-        const rad=(assigned?7.2:6.2)*S*clampv(zoom,0.8,1.8);
-        ctx.beginPath();
-        ctx.arc(o.sx, o.sy, rad, 0, 7);
-        ctx.fillStyle=pts[i].col;
-        ctx.globalAlpha=0.92;
-        ctx.fill();
-        if(assigned){
-          ctx.lineWidth=2.4*S; ctx.strokeStyle=cols[k]; ctx.stroke();
-        }
-        ctx.globalAlpha=1;
-      }
-      for(let k=0;k<visibleMeans;k++){
-        const c=centroids[k];
-        const s=centroidScreen(c,angle);
-        let scale=1;
-        if(phase==='guess' && k===visibleMeans-1){
-          const age=(performance.now()-t0)/380;
-          scale=age<1?0.35+0.65*Math.min(1,age):1;
-        }
-        const R=18*S*scale*clampv(zoom*0.55,0.85,1.8);
-        ctx.beginPath(); ctx.arc(s.sx,s.sy,R+7*S,0,7);
-        ctx.fillStyle=cols[k]; ctx.globalAlpha=0.14; ctx.fill(); ctx.globalAlpha=1;
-        ctx.beginPath(); ctx.arc(s.sx,s.sy,R,0,7);
-        ctx.lineWidth=4.2*S; ctx.strokeStyle=cols[k]; ctx.stroke();
-        ctx.beginPath(); ctx.arc(s.sx,s.sy,4.6*S,0,7);
-        ctx.fillStyle=cols[k]; ctx.fill();
-        ctx.font=`700 ${Math.round(13*S)}px ui-monospace,monospace`;
-        ctx.fillStyle=cols[k];
-        ctx.fillText('μ'+(k+1), s.sx+R+5*S, s.sy-R+2);
       }
     }
 
